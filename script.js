@@ -366,7 +366,7 @@ async function analyzeBusiness(data) {
                 ],
 
                 temperature: 0.7,
-                max_tokens: 1800
+                max_tokens: 3500
             })
 
         });
@@ -378,45 +378,29 @@ async function analyzeBusiness(data) {
         const result = await response.json();
 
         const aiText =
-            result.choices?.[0]?.message?.content ||
-            "تعذر إنشاء التحليل.";
+result.choices?.[0]?.message?.content;
 
-        return {
-            score: Math.floor(Math.random() * 3) + 7,
+if (!aiText) {
+    throw new Error("No AI response");
+}
 
-            sections: {
+return {
+    score: Math.floor(Math.random() * 3) + 7,
 
-                summary: aiText,
+    sections: {
+        summary: aiText,
 
-                strengths: [
-                    "وجود فرص نمو حقيقية داخل السوق المستهدف.",
-                    "إمكانية تحسين النتائج بسرعة من خلال التسويق الرقمي.",
-                    "المشروع يمتلك مقومات جيدة للتوسع."
-                ],
+        strengths: [],
+        weaknesses: [],
+        opportunities: [],
 
-                weaknesses: [
-                    "الحاجة إلى استراتيجية تسويقية أكثر وضوحاً.",
-                    "ضرورة تطوير الحضور الرقمي بشكل أكبر.",
-                    "وجود فرص تسويقية غير مستغلة حالياً."
-                ],
+        services: getRecommendedServices(data),
 
-                opportunities: [
-                    "التوسع في الحملات الإعلانية الرقمية.",
-                    "الوصول إلى شرائح جديدة من العملاء.",
-                    "بناء هوية قوية تزيد من ولاء العملاء."
-                ],
+        nextSteps: [],
 
-                services: getRecommendedServices(data),
-
-                nextSteps: [
-                    "تحديد خطة تسويق واضحة.",
-                    "تحسين المحتوى الرقمي.",
-                    "متابعة وتحليل النتائج باستمرار."
-                ],
-
-                recommendation: aiText
-            }
-        };
+        recommendation: ""
+    }
+};
 
     } catch (error) {
 
@@ -694,45 +678,25 @@ function animateScore(score) {
 }
 
 function renderReport(analysis) {
-    const reportContent = document.getElementById('reportContent');
-    
-    const sections = [
-        {
-            icon: '📊',
-            title: 'ملخص تنفيذي',
-            content: `<p>${analysis.sections.summary}</p>`
-        },
-        {
-            icon: '💪',
-            title: 'نقاط القوة',
-            content: `<ul>${analysis.sections.strengths.map(s => `<li>${s}</li>`).join('')}</ul>`
-        },
-        {
-            icon: '⚠️',
-            title: 'نقاط الضعف',
-            content: `<ul>${analysis.sections.weaknesses.map(w => `<li>${w}</li>`).join('')}</ul>`
-        },
-        {
-            icon: '🚀',
-            title: 'فرص النمو',
-            content: `<ul>${analysis.sections.opportunities.map(o => `<li>${o}</li>`).join('')}</ul>`
-        },
-        {
-            icon: '🎯',
-            title: 'الخدمات التي نوصي بها',
-            content: `<ul>${analysis.sections.services.map(s => `<li>${s}</li>`).join('')}</ul>`
-        },
-        {
-            icon: '✅',
-            title: 'أول 3 خطوات عملية',
-            content: `<ol>${analysis.sections.nextSteps.map(n => `<li>${n}</li>`).join('')}</ol>`
-        },
-        {
-            icon: '💡',
-            title: 'توصية عروج',
-            content: `<p>${analysis.sections.recommendation}</p>`
-        }
-    ];
+
+    const reportContent =
+        document.getElementById('reportContent');
+
+    reportContent.innerHTML = `
+        <div class="report-section">
+            <div class="report-section-header">
+                <h3 class="report-section-title">
+                    📊 تقرير التحليل الكامل
+                </h3>
+            </div>
+
+            <div class="report-section-content">
+                ${analysis.sections.summary
+                    .replace(/\n/g,'<br>')}
+            </div>
+        </div>
+    `;
+}
     
     reportContent.innerHTML = sections.map((section, index) => `
         <div class="report-section" data-section="${index}">
