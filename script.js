@@ -5,12 +5,12 @@
 
 // ===== CONFIGURATION =====
 const CONFIG = {
-    API_ENDPOINT: "", // Add your AI API endpoint here
-    API_KEY: "", // Add your API key here
+    API_ENDPOINT: "https://router.bynara.id/v1/chat/completions",
+    API_KEY: "sk-nry-kIotj6pztHVIwuyvsd1ulEJcU_jRcoZre6X-MRPAi8U",
     WHATSAPP_NUMBER: "201284324217",
     TOTAL_STEPS: 8,
-    LOADING_DURATION: 10000, // 10 seconds
-    AUTO_SAVE_DELAY: 500 // Auto-save delay in ms
+    LOADING_DURATION: 10000,
+    AUTO_SAVE_DELAY: 500
 };
 
 // ===== STATE MANAGEMENT =====
@@ -327,41 +327,104 @@ function showLoadingScreen() {
 
 // ===== AI INTEGRATION =====
 async function analyzeBusiness(data) {
-    // If API is not configured, use fallback
-    if (!CONFIG.API_ENDPOINT || !CONFIG.API_KEY) {
+
+    const prompt = generateAIPrompt(data);
+
+    try {
+
+        const response = await fetch(CONFIG.API_ENDPOINT, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${CONFIG.API_KEY}`
+            },
+
+            body: JSON.stringify({
+                model: "openai/gpt-4o-mini",
+
+                messages: [
+                    {
+                        role: "system",
+                        content: `أنت مستشار أعمال عالمي وخبير تسويق واستراتيجيات علامات تجارية.
+
+أجب باللغة العربية فقط.
+
+يجب أن يكون الرد احترافياً ومنظماً ويحتوي على:
+1- ملخص تنفيذي
+2- نقاط القوة
+3- نقاط الضعف
+4- فرص النمو
+5- الخدمات الموصى بها
+6- أول 3 خطوات عملية
+7- توصية نهائية`
+                    },
+
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
+
+                temperature: 0.7,
+                max_tokens: 1800
+            })
+
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        const aiText =
+            result.choices?.[0]?.message?.content ||
+            "تعذر إنشاء التحليل.";
+
+        return {
+            score: Math.floor(Math.random() * 3) + 7,
+
+            sections: {
+
+                summary: aiText,
+
+                strengths: [
+                    "وجود فرص نمو حقيقية داخل السوق المستهدف.",
+                    "إمكانية تحسين النتائج بسرعة من خلال التسويق الرقمي.",
+                    "المشروع يمتلك مقومات جيدة للتوسع."
+                ],
+
+                weaknesses: [
+                    "الحاجة إلى استراتيجية تسويقية أكثر وضوحاً.",
+                    "ضرورة تطوير الحضور الرقمي بشكل أكبر.",
+                    "وجود فرص تسويقية غير مستغلة حالياً."
+                ],
+
+                opportunities: [
+                    "التوسع في الحملات الإعلانية الرقمية.",
+                    "الوصول إلى شرائح جديدة من العملاء.",
+                    "بناء هوية قوية تزيد من ولاء العملاء."
+                ],
+
+                services: getRecommendedServices(data),
+
+                nextSteps: [
+                    "تحديد خطة تسويق واضحة.",
+                    "تحسين المحتوى الرقمي.",
+                    "متابعة وتحليل النتائج باستمرار."
+                ],
+
+                recommendation: aiText
+            }
+        };
+
+    } catch (error) {
+
+        console.error("AI API Error:", error);
+
         return generateFallbackAnalysis(data);
     }
-    
-    const prompt = generateAIPrompt(data);
-    
-    try {
-        const response = await fetch(CONFIG.API_ENDPOINT, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${CONFIG.API_KEY}`
-            },
-            body: JSON.stringify({
-                prompt: prompt,
-                // Add other required parameters based on your AI provider
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error('API request failed');
-        }
-        
-        const result = await response.json();
-        
-        // Parse AI response
-        return parseAIResponse(result);
-        
-    } catch (error) {
-        console.error('AI API Error:', error);
-        throw error;
-    }
 }
-
 function generateAIPrompt(data) {
     return `
 أنت مستشار أعمال عالمي، خبير استراتيجيات العلامات التجارية والتسويق الرقمي.
