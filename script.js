@@ -5,13 +5,12 @@
 
 // ===== CONFIGURATION =====
 const CONFIG = {
-    API_ENDPOINT: "https://router.bynara.id/v1/chat/completions",
-    API_KEY: "sk-nry-kIotj6pztHVIwuyvsd1ulEJcU_jRcoZre6X-MRPAi8U",
+    API_ENDPOINT: "", // Add your AI API endpoint here
+    API_KEY: "", // Add your API key here
     WHATSAPP_NUMBER: "201284324217",
     TOTAL_STEPS: 8,
-    LOADING_DURATION: 10000,
-    AUTO_SAVE_DELAY: 500
-}; // Auto-save delay in ms
+    LOADING_DURATION: 10000, // 10 seconds
+    AUTO_SAVE_DELAY: 500 // Auto-save delay in ms
 };
 
 // ===== STATE MANAGEMENT =====
@@ -328,11 +327,14 @@ function showLoadingScreen() {
 
 // ===== AI INTEGRATION =====
 async function analyzeBusiness(data) {
-
+    // If API is not configured, use fallback
+    if (!CONFIG.API_ENDPOINT || !CONFIG.API_KEY) {
+        return generateFallbackAnalysis(data);
+    }
+    
     const prompt = generateAIPrompt(data);
-
+    
     try {
-
         const response = await fetch(CONFIG.API_ENDPOINT, {
             method: 'POST',
             headers: {
@@ -340,50 +342,24 @@ async function analyzeBusiness(data) {
                 'Authorization': `Bearer ${CONFIG.API_KEY}`
             },
             body: JSON.stringify({
-                model: "auto/bynara",
-                messages: [
-                    {
-                        role: "system",
-                        content: "أنت مستشار أعمال عالمي وخبير تسويق وعلامات تجارية."
-                    },
-                    {
-                        role: "user",
-                        content: prompt
-                    }
-                ],
-                temperature: 0.7,
-                max_tokens: 2000
+                prompt: prompt,
+                // Add other required parameters based on your AI provider
             })
         });
-
+        
         if (!response.ok) {
-            throw new Error("API Error");
+            throw new Error('API request failed');
         }
-
+        
         const result = await response.json();
-
-        const aiText =
-            result.choices[0].message.content;
-
-        return {
-            score: Math.floor(Math.random() * 3) + 7,
-            sections: {
-                summary: aiText,
-                strengths: ["تم توليد التحليل بواسطة AI"],
-                weaknesses: [],
-                opportunities: [],
-                recommendations: [],
-                services: [],
-                nextSteps: [],
-                recommendation: aiText
-            }
-        };
-
+        
+        // Parse AI response
+        return parseAIResponse(result);
+        
     } catch (error) {
-        console.log(error);
-        return generateFallbackAnalysis(data);
+        console.error('AI API Error:', error);
+        throw error;
     }
-}
 }
 
 function generateAIPrompt(data) {
