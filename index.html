@@ -521,16 +521,30 @@
             </div>
 
             <!-- Score Card -->
-            <div class="score-card glass-card">
-                <div class="score-label">تقييم المشروع</div>
-                <div class="score-circle">
-                    <svg class="score-svg" width="200" height="200">
-                        <circle class="score-bg" cx="100" cy="100" r="90"></circle>
-                        <circle class="score-progress" cx="100" cy="100" r="90" id="scoreCircle"></circle>
-                    </svg>
-                    <div class="score-value" id="scoreValue">0</div>
-                </div>
-                <div class="score-description" id="scoreDescription">ممتاز</div>
+            <div class="score-circle">
+    <svg class="score-svg" viewBox="0 0 200 200">
+        <defs>
+            <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#C9A84C"/>
+                <stop offset="100%" stop-color="#d4b962"/>
+            </linearGradient>
+        </defs>
+
+        <circle class="score-bg"
+                cx="100"
+                cy="100"
+                r="90">
+        </circle>
+
+        <circle class="score-progress"
+                cx="100"
+                cy="100"
+                r="90"
+                id="scoreCircle">
+        </circle>
+    </svg>
+
+    <div class="score-value" id="scoreValue">0</div>
             </div>
 
             <!-- Report Content -->
