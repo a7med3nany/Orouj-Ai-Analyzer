@@ -707,17 +707,108 @@ const LOADING = {
 // ============================================================
 
 async function analyzeBusiness(data) {
-  // ADD API HERE
-  // Example:
-  // const response = await fetch("sk-nry-kIotj6pztHVIwuyvsd1ulEJcU_jRcoZre6X-MRPAi8U", {
-  //   method: "POST",
-  //   headers: { "Content-Type": "application/json" },
-  //   body: JSON.stringify(data),
-  // });
-  // return await response.json();
 
-  // Default fallback analysis
-  return generateDefaultAnalysis(data);
+  const prompt = `
+قم بتحليل المشروع التالي:
+
+اسم المشروع: ${data.businessName}
+نوع المشروع: ${data.businessType}
+الهدف: ${data.goal}
+التحديات: ${Array.isArray(data.challenges) ? data.challenges.join(', ') : data.challenges}
+الجمهور المستهدف: ${data.targetAudience}
+الوصف: ${data.productsDescription}
+
+أعطني:
+1- ملخص تنفيذي
+2- نقاط القوة
+3- نقاط الضعف
+4- فرص النمو
+5- الخدمات الموصى بها
+6- أول 3 خطوات عملية
+7- توصية نهائية
+
+أجب باللغة العربية فقط.
+`;
+
+  try {
+
+    const response = await fetch("https://router.bynara.id/v1/chat/completions", {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json",
+
+        "Authorization": "Bearer sk-nry-kIotj6pztHVIwuyvsd1ulEJcU_jRcoZre6X-MRPAi8U"
+      },
+
+      body: JSON.stringify({
+        model: "openai/gpt-4o-mini",
+
+        messages: [
+          {
+            role: "system",
+            content: "أنت مستشار أعمال عالمي."
+          },
+
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+
+        temperature: 0.7,
+        max_tokens: 1800
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error("API Error");
+    }
+
+    const result = await response.json();
+
+    const aiText =
+      result.choices?.[0]?.message?.content ||
+      "تعذر إنشاء التحليل";
+
+    return {
+      score: Math.floor(Math.random() * 3) + 7,
+
+      sections: {
+        summary: aiText,
+
+        strengths: [
+          "المشروع يمتلك فرص نمو جيدة."
+        ],
+
+        weaknesses: [
+          "يحتاج إلى استراتيجية تسويقية أكثر وضوحاً."
+        ],
+
+        opportunities: [
+          "التوسع في التسويق الرقمي."
+        ],
+
+        services: [
+          "استراتيجية تسويق متكاملة"
+        ],
+
+        nextSteps: [
+          "تحديد خطة تسويقية.",
+          "تحسين المحتوى.",
+          "متابعة النتائج."
+        ],
+
+        recommendation: aiText
+      }
+    };
+
+  } catch (error) {
+
+    console.error(error);
+
+    return generateDefaultAnalysis(data);
+  }
 }
 
 function generateDefaultAnalysis(data) {
