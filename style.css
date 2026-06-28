@@ -1222,24 +1222,10 @@ backdrop-filter: blur(15px);
 .mb-2 { margin-bottom: var(--spacing-md); }
 .mb-3 { margin-bottom: var(--spacing-lg); }
 
-@media (max-width: 768px){
+@media (max-width: 768px) {
 
-    .score-card{
-        padding: 30px 20px;
-    }
-
-    .score-svg{
-        width: 250px;
-        height: 250px;
-    }
-
-    .score-value{
-        font-size: 4rem;
-    }
-
-    .score-description{
-        margin-top: 20px;
-        font-size: 1.5rem;
+    .score-container {
+        transform: scale(0.85);
     }
 
 }
