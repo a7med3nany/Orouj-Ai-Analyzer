@@ -107,22 +107,22 @@ body {
 /* ===== LOGO ===== */
 .logo-container {
     position: fixed;
-    top: 15px;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 0;
+    left: 0;
+    width: 100%;
     z-index: 1000;
 
-    background: rgba(8,8,8,0.485);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 8px 0; /* قللت المسافة الرأسية */
+
+    background: rgba(8, 8, 8, 0.45); /* شفافية أعلى */
     backdrop-filter: blur(12px);
 
-    padding: 12px 25px;
-    border-radius: 25px;
-
-    border: 1px solid rgba(201,168,76,0.2);
-
-    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
 }
-
 .logo {
     height: 60px;
     width: auto;
@@ -152,11 +152,7 @@ body {
     justify-content: center;
     align-items: center;
 
-    /* المسافة الجديدة */
-    padding: 80px var(--spacing-md) var(--spacing-xl);
-
-    position: relative;
-    z-index: 1;
+    padding: 90px var(--spacing-md) var(--spacing-xl);
 }
 
 .hero-content {
