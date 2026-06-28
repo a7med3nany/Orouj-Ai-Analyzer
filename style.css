@@ -1224,8 +1224,34 @@ backdrop-filter: blur(15px);
 
 @media (max-width: 768px) {
 
-    .score-container {
-        transform: scale(0.85);
+    .score-card {
+        padding: 20px 10px;
     }
 
+    .score-circle {
+        width: 220px;
+        height: 220px;
+        margin: 0 auto 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .score-svg {
+        width: 220px;
+        height: 220px;
+    }
+
+    .score-value {
+        font-size: 3rem;
+        width: 100%;
+        text-align: center;
+    }
+
+    .score-description {
+        margin-top: -10px;
+    }
 }
+
+
+
