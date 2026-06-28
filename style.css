@@ -165,7 +165,8 @@ body {
 }
 
 .hero-content {
-    max-width: 900px;
+  padding-top: 160px;
+   max-width: 900px;
     text-align: center;
     animation: fadeInUp 1s ease;
 }
