@@ -890,41 +890,42 @@ function analyzeBusiness(data) {
     challengesText = data.challenges.map(function(c) { return CONFIG.CHALLENGES[c] || c; }).join("، ");
   }
 
-  var prompt = "قم بتحليل المشروع التالي وأعطني تقريراً احترافياً باللغة العربية:\n\n" +
-    "الاسم: " + (data.fullName || "") + "\n" +
-    "اسم المشروع: " + (data.businessName || "") + "\n" +
-    "نوع المشروع: " + (CONFIG.BUSINESS_TYPES[data.businessType] || data.businessType || "") + "\n" +
-    "عمر المشروع: " + (CONFIG.BUSINESS_AGES[data.businessAge] || data.businessAge || "") + "\n" +
-    "الهدف الرئيسي: " + (CONFIG.GOALS[data.goal] || data.goal || "") + "\n" +
-    "الميزانية الشهرية: " + (CONFIG.BUDGETS[data.budget] || data.budget || "") + "\n" +
-    "التحديات: " + challengesText + "\n" +
-    "التواجد على السوشيال: " + (data.hasSocial === "yes" ? "نعم — " + (data.socialLink || "بدون رابط") : "لا") + "\n" +
-    "المشكلة الأكثر إلحاحاً: " + (data.mainProblem || "") + "\n\n" +
-    "أريد ردك منظماً بالضبط على الشكل التالي (استخدم هذه العناوين حرفياً):\n\n" +
-    "[ملخص]\nاكتب هنا ملخصاً تنفيذياً في فقرة واحدة.\n\n" +
-    "[نقاط القوة]\n- نقطة 1\n- نقطة 2\n- نقطة 3\n\n" +
-    "[نقاط الضعف]\n- نقطة 1\n- نقطة 2\n- نقطة 3\n\n" +
-    "[فرص النمو]\n- فرصة 1\n- فرصة 2\n- فرصة 3\n\n" +
-    "[الخدمات الموصى بها]\n- خدمة 1\n- خدمة 2\n- خدمة 3\n\n" +
-    "[أول 3 خطوات]\n- خطوة 1\n- خطوة 2\n- خطوة 3\n\n" +
-    "[التوصية النهائية]\nاكتب هنا توصيتك النهائية في فقرة واحدة.\n\n" +
-    "أجب باللغة العربية فقط ولا تضف أي نص خارج هذا الهيكل.";
+  // برومبت مطور للحصول على أقصى دقة وتفاصيل من الموديل
+  var prompt = "أنت مستشار استراتيجي خبير. قم بتحليل هذا المشروع بدقة متناهية وأعطني تقريراً احترافياً مفصلاً باللغة العربية:\n\n" +
+    "بيانات المشروع:\n" +
+    "- الاسم الشخصي: " + (data.fullName || "") + "\n" +
+    "- اسم المشروع: " + (data.businessName || "") + "\n" +
+    "- التخصص: " + (CONFIG.BUSINESS_TYPES[data.businessType] || data.businessType || "") + "\n" +
+    "- المرحلة الحالية: " + (CONFIG.BUSINESS_AGES[data.businessAge] || data.businessAge || "") + "\n" +
+    "- الهدف المنشود: " + (CONFIG.GOALS[data.goal] || data.goal || "") + "\n" +
+    "- الميزانية المتاحة: " + (CONFIG.BUDGETS[data.budget] || data.budget || "") + "\n" +
+    "- التحديات القائمة: " + challengesText + "\n" +
+    "- التواجد الرقمي: " + (data.hasSocial === "yes" ? "موجود — " + (data.socialLink || "") : "غير موجود") + "\n" +
+    "- العائق الأكبر: " + (data.mainProblem || "") + "\n\n" +
+    "المطلوب تحليل عميق وشامل مقسم كالتالي (استخدم العناوين بدقة):\n\n" +
+    "[ملخص]\nتحليل تنفيذي شامل للوضع الراهن للمشروع وفرصه في السوق.\n\n" +
+    "[نقاط القوة]\nحلل على الأقل 3 نقاط قوة يمكن الارتكاز عليها.\n\n" +
+    "[نقاط الضعف]\nحدد الثغرات الحالية التي تعيق النمو.\n\n" +
+    "[فرص النمو]\nاقترح فرصاً تسويقية وتقنية بناءً على الميزانية المذكورة.\n\n" +
+    "[الخدمات الموصى بها]\nحدد الخدمات التي يحتاجها المشروع فوراً (تسويق، برمجة، هوية...).\n\n" +
+    "[أول 3 خطوات]\nخطة عمل تطبيقية تبدأ من اليوم.\n\n" +
+    "[التوصية النهائية]\nنصيحة استراتيجية ختامية لمستقبل المشروع.\n\n" +
+    "أجب باللغة العربية الفصحى وبأسلوب مهني جداً.";
 
-  // استخدام بروكسي تلقائي لحل مشكلة CORS
   var targetUrl = "https://router.bynara.id/v1/chat/completions";
   var apiUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
 
   var requestBody = {
-    model: "mimo-v2.5-free",
+    model: "mimo-v2.5-free", // العودة للموديل الذي تفضله لدقته
     messages: [
-      { role: "system", content: "أنت مستشار أعمال وتسويق رقمي متخصص في السوق المصري والعربي." },
+      { role: "system", content: "أنت خبير استشارات أعمال وتسويق رقمي، ردودك مفصلة، دقيقة، وتعتمد على بيانات السوق الحقيقية." },
       { role: "user", content: prompt }
     ],
-    temperature: 0.7,
-    max_tokens: 2000
+    temperature: 0.8, // زيادة التنوع في الإجابة لجعلها أكثر إبداعاً
+    max_tokens: 2500  // زيادة عدد الكلمات للسماح للموديل بالتوسع في الشرح
   };
 
-  console.log("%c[API Debug] Sending via CORS Proxy...", "color: #3498db; font-weight: bold;");
+  console.log("%c[API Debug] Starting Deep Analysis... Please wait.", "color: #f39c12; font-weight: bold;");
 
   return fetch(apiUrl, {
     method: "POST",
@@ -935,39 +936,30 @@ function analyzeBusiness(data) {
     body: JSON.stringify(requestBody)
   })
   .then(async function(response) {
-    var responseData;
-    try {
-      responseData = await response.json();
-    } catch (e) {
-      responseData = await response.text();
-    }
-
-    console.log("[API Debug] Response:", response.status, responseData);
+    var responseData = await response.json();
+    console.log("[API Debug] Status:", response.status);
 
     if (!response.ok) {
-      var errorMsg = responseData.error ? responseData.error.message : "HTTP Error " + response.status;
-      if (errorMsg.includes("telegram_required")) {
-        alert("تنبيه: يجب ربط حسابك في Bynara بـ Telegram لتفعيل الـ API.");
-      } else {
-        alert("خطأ: " + errorMsg);
-      }
-      throw new Error(errorMsg);
+      throw new Error(responseData.error ? responseData.error.message : "HTTP Error " + response.status);
     }
     return responseData;
   })
   .then(function(result) {
-    var aiText = "";
-    if (result && result.choices && result.choices[0] && result.choices[0].message) {
-      aiText = result.choices[0].message.content || "";
-    }
-    if (!aiText.trim()) throw new Error("EMPTY_RESPONSE");
+    var aiText = result.choices[0].message.content || "";
+    console.log("[API Debug] Analysis Received. Length:", aiText.length);
     return parseAIResponse(aiText, data);
   })
   .catch(function(err) {
-    console.error("[API Debug] Critical Error:", err);
+    console.error("[API Debug] Error:", err);
+    if (err.message.includes("timeout") || err.message.includes("403")) {
+      alert("التحليل العميق يأخذ وقتاً طويلاً حالياً بسبب ضغط الخادم. يرجى إعادة المحاولة مرة أخرى.");
+    } else {
+      alert("حدث خطأ أثناء التحليل: " + err.message);
+    }
     throw err;
   });
 }
+
 
 
 
