@@ -890,62 +890,44 @@ async function analyzeBusiness(data) {
     challengesText = data.challenges.map(function(c) { return CONFIG.CHALLENGES[c] || c; }).join("، ");
   }
 
-  var prompt = "حلل هذا المشروع باختصار واحترافية (ملخص، نقاط قوة، نقاط ضعف، فرص، خدمات، 3 خطوات، توصية):\n" +
+  var prompt = "حلل هذا المشروع باحترافية (ملخص، نقاط قوة، نقاط ضعف، فرص، خدمات، 3 خطوات، توصية):\n" +
     "المشروع: " + (data.businessName || "") + "\n" +
     "التخصص: " + (CONFIG.BUSINESS_TYPES[data.businessType] || "") + "\n" +
     "الهدف: " + (CONFIG.GOALS[data.goal] || "") + "\n" +
     "المشكلة: " + (data.mainProblem || "");
 
-  // استخدام بروكسي AllOrigins وهو يعيد البيانات كـ JSON مباشرة ويتحمل وقتاً أطول
   var targetUrl = "https://router.bynara.id/v1/chat/completions";
-  var apiUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(targetUrl);
-
-  console.log("%c[API Debug] Sending via AllOrigins Proxy...", "color: #3498db;");
+  var apiUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
 
   try {
     const response = await fetch(apiUrl, {
-      method: "POST", // ملاحظة: AllOrigins قد يتطلب تغيير طريقة الإرسال حسب إعداداته
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI"
-        },
-        body: JSON.stringify({
-          model: "mimo-v2.5-free",
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.7,
-          max_tokens: 1000 // تقليل التوكنز لسرعة الرد وتجنب الـ Timeout
-        })
-      })
-    });
-
-    const dataRaw = await response.json();
-    const responseData = JSON.parse(dataRaw.contents); // AllOrigins يضع الرد داخل contents
-    
-    if (responseData.error) throw new Error(responseData.error.message);
-
-    var aiText = responseData.choices[0].message.content;
-    return parseAIResponse(aiText, data);
-
-  } catch (err) {
-    // إذا فشل كل شيء، سنضطر لاستخدام الموديل الأسرع gpt-3.5-turbo كحل أخير لضمان عمل الأداة أمام المستخدمين
-    console.warn("Switching to faster model due to timeout...");
-    return fetch("https://corsproxy.io/?https://router.bynara.id/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI"
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
+        model: "mistral-medium-3-5", // موديل سريع جداً ومجاني في حسابك
         messages: [{ role: "user", content: prompt }],
-        max_tokens: 800
+        temperature: 0.7,
+        max_tokens: 1500
       })
-    }).then(r => r.json()).then(res => parseAIResponse(res.choices[0].message.content, data));
+    });
+
+    if (!response.ok) throw new Error("HTTP " + response.status);
+
+    const result = await response.json();
+    const aiText = result.choices[0].message.content;
+    
+    return parseAIResponse(aiText, data);
+
+  } catch (err) {
+    console.error("[API Debug] Error:", err);
+    alert("حدث خطأ: " + err.message);
+    return generateDefaultAnalysis(data);
   }
 }
+
 
 
 
