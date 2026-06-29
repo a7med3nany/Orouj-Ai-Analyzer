@@ -911,7 +911,7 @@ function analyzeBusiness(data) {
     "أجب باللغة العربية فقط ولا تضف أي نص خارج هذا الهيكل.";
 
   const debugInfo = {
-    apiUrl: "https://router.bynara.id/v1/chat/completions",
+    apiUrl: "https://cors-anywhere.herokuapp.com/https://router.bynara.id/v1/chat/completions",
     requestHeaders: {
       "Content-Type": "application/json",
       "Authorization": "Bearer sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI"
