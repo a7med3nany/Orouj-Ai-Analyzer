@@ -884,7 +884,6 @@ function restartApp() {
 // ============================================================
 // AI — Nara Router API + fallback
 // ============================================================
-
 function analyzeBusiness(data) {
   var challengesText = "";
   if (Array.isArray(data.challenges)) {
@@ -911,75 +910,68 @@ function analyzeBusiness(data) {
     "[التوصية النهائية]\nاكتب هنا توصيتك النهائية في فقرة واحدة.\n\n" +
     "أجب باللغة العربية فقط ولا تضف أي نص خارج هذا الهيكل.";
 
-  console.log("Sending prompt to API, length:", prompt.length);
-
-  return fetch("https://router.bynara.id/v1/chat/completions", {
-    method: "POST",
-    headers: {
+  const debugInfo = {
+    apiUrl: "https://router.bynara.id/v1/chat/completions",
+    requestHeaders: {
       "Content-Type": "application/json",
       "Authorization": "Bearer sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI"
     },
-    body: JSON.stringify({
+    requestBody: {
       model: "mimo-v2.5-free",
       messages: [
-        {
-          role: "system",
-          content: "أنت مستشار أعمال وتسويق رقمي متخصص في السوق المصري والعربي."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
+        { role: "system", content: "أنت مستشار أعمال وتسويق رقمي متخصص في السوق المصري والعربي." },
+        { role: "user", content: prompt }
       ],
       temperature: 0.7,
       max_tokens: 2000
-    })
-  }).then(function(response) {
-    console.log("HTTP Status:", response.status);
+    }
+  };
 
-    if (!response.ok) {
-      return response.text().then(function(errorText) {
-        var msg = "خطأ في الاتصال بالـ API: HTTP " + response.status;
-        if (errorText) msg += "\n" + errorText.substring(0, 300);
-        alert(msg);
-        throw new Error("HTTP_ERROR_" + response.status);
-      }).catch(function(err) {
-        if (err.message && err.message.indexOf("HTTP_ERROR_") === 0) throw err;
-        alert("خطأ في الاتصال بالـ API: HTTP " + response.status);
-        throw new Error("HTTP_ERROR_" + response.status);
-      });
+  console.log("%c[API Debug] Starting Request...", "color: #3498db; font-weight: bold;");
+
+  return fetch(debugInfo.apiUrl, {
+    method: "POST",
+    headers: debugInfo.requestHeaders,
+    body: JSON.stringify(debugInfo.requestBody)
+  })
+  .then(async function(response) {
+    var responseData;
+    var contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      responseData = await response.json();
+    } else {
+      responseData = await response.text();
     }
 
-    return response.json();
+    console.log("%c[API Debug] Response Status:", "color: #2ecc71;", response.status);
+    console.log("[API Debug] Response Body:", responseData);
 
-  }).then(function(result) {
-    console.log("API Response:", result);
-
+    if (!response.ok) {
+      throw new Error("HTTP Error " + response.status + ": " + (typeof responseData === 'object' ? JSON.stringify(responseData) : responseData));
+    }
+    return responseData;
+  })
+  .then(function(result) {
     var aiText = "";
     if (result && result.choices && result.choices[0] && result.choices[0].message) {
       aiText = result.choices[0].message.content || "";
     }
-
-    if (!aiText.trim()) {
-      alert("الـ API أرجع رد فارغ، يتم استخدام التحليل المحلي");
-      throw new Error("EMPTY_RESPONSE");
-    }
-
-    console.log("AI Text received, length:", aiText.length);
+    if (!aiText.trim()) throw new Error("EMPTY_RESPONSE_FROM_API");
     return parseAIResponse(aiText, data);
-
-  }).catch(function(err) {
-    console.error("analyzeBusiness — Error:", err);
-
-    if (err.message === "EMPTY_RESPONSE" || (err.message && err.message.indexOf("HTTP_ERROR_") === 0)) {
-      console.log("Known API error, using fallback");
+  })
+  .catch(function(err) {
+    console.group("%c[API Debug] Error Details", "color: #e74c3c;");
+    console.error("Message:", err.message);
+    if (err.message === "Failed to fetch") {
+      alert("خطأ CORS: الخادم يمنع الاتصال من GitHub Pages. يرجى تفعيل CORS في إعدادات Bynara أو استخدام بروكسي.");
     } else {
-      alert("تعذر الاتصال بالخادم:\n" + err.message);
+      alert("حدث خطأ: " + err.message);
     }
-
-    return generateDefaultAnalysis(data);
+    console.groupEnd();
+    throw err;
   });
 }
+
 
 function parseAIResponse(text, data) {
   function extractSection(tag) {
