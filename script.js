@@ -910,44 +910,48 @@ function analyzeBusiness(data) {
     "[التوصية النهائية]\nاكتب هنا توصيتك النهائية في فقرة واحدة.\n\n" +
     "أجب باللغة العربية فقط ولا تضف أي نص خارج هذا الهيكل.";
 
-  const debugInfo = {
-    apiUrl: "https://cors-anywhere.herokuapp.com/https://router.bynara.id/v1/chat/completions",
-    requestHeaders: {
+  // استخدام بروكسي تلقائي لحل مشكلة CORS
+  var targetUrl = "https://router.bynara.id/v1/chat/completions";
+  var apiUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
+
+  var requestBody = {
+    model: "mimo-v2.5-free",
+    messages: [
+      { role: "system", content: "أنت مستشار أعمال وتسويق رقمي متخصص في السوق المصري والعربي." },
+      { role: "user", content: prompt }
+    ],
+    temperature: 0.7,
+    max_tokens: 2000
+  };
+
+  console.log("%c[API Debug] Sending via CORS Proxy...", "color: #3498db; font-weight: bold;");
+
+  return fetch(apiUrl, {
+    method: "POST",
+    headers: {
       "Content-Type": "application/json",
       "Authorization": "Bearer sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI"
     },
-    requestBody: {
-      model: "mimo-v2.5-free",
-      messages: [
-        { role: "system", content: "أنت مستشار أعمال وتسويق رقمي متخصص في السوق المصري والعربي." },
-        { role: "user", content: prompt }
-      ],
-      temperature: 0.7,
-      max_tokens: 2000
-    }
-  };
-
-  console.log("%c[API Debug] Starting Request...", "color: #3498db; font-weight: bold;");
-
-  return fetch(debugInfo.apiUrl, {
-    method: "POST",
-    headers: debugInfo.requestHeaders,
-    body: JSON.stringify(debugInfo.requestBody)
+    body: JSON.stringify(requestBody)
   })
   .then(async function(response) {
     var responseData;
-    var contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
+    try {
       responseData = await response.json();
-    } else {
+    } catch (e) {
       responseData = await response.text();
     }
 
-    console.log("%c[API Debug] Response Status:", "color: #2ecc71;", response.status);
-    console.log("[API Debug] Response Body:", responseData);
+    console.log("[API Debug] Response:", response.status, responseData);
 
     if (!response.ok) {
-      throw new Error("HTTP Error " + response.status + ": " + (typeof responseData === 'object' ? JSON.stringify(responseData) : responseData));
+      var errorMsg = responseData.error ? responseData.error.message : "HTTP Error " + response.status;
+      if (errorMsg.includes("telegram_required")) {
+        alert("تنبيه: يجب ربط حسابك في Bynara بـ Telegram لتفعيل الـ API.");
+      } else {
+        alert("خطأ: " + errorMsg);
+      }
+      throw new Error(errorMsg);
     }
     return responseData;
   })
@@ -956,21 +960,15 @@ function analyzeBusiness(data) {
     if (result && result.choices && result.choices[0] && result.choices[0].message) {
       aiText = result.choices[0].message.content || "";
     }
-    if (!aiText.trim()) throw new Error("EMPTY_RESPONSE_FROM_API");
+    if (!aiText.trim()) throw new Error("EMPTY_RESPONSE");
     return parseAIResponse(aiText, data);
   })
   .catch(function(err) {
-    console.group("%c[API Debug] Error Details", "color: #e74c3c;");
-    console.error("Message:", err.message);
-    if (err.message === "Failed to fetch") {
-      alert("خطأ CORS: الخادم يمنع الاتصال من GitHub Pages. يرجى تفعيل CORS في إعدادات Bynara أو استخدام بروكسي.");
-    } else {
-      alert("حدث خطأ: " + err.message);
-    }
-    console.groupEnd();
+    console.error("[API Debug] Critical Error:", err);
     throw err;
   });
 }
+
 
 
 function parseAIResponse(text, data) {
