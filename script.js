@@ -890,14 +890,32 @@ async function analyzeBusiness(data) {
     challengesText = data.challenges.map(function(c) { return CONFIG.CHALLENGES[c] || c; }).join("، ");
   }
 
-  var prompt = "حلل هذا المشروع باحترافية (ملخص، نقاط قوة، نقاط ضعف، فرص، خدمات، 3 خطوات، توصية):\n" +
-    "المشروع: " + (data.businessName || "") + "\n" +
-    "التخصص: " + (CONFIG.BUSINESS_TYPES[data.businessType] || "") + "\n" +
-    "الهدف: " + (CONFIG.GOALS[data.goal] || "") + "\n" +
-    "المشكلة: " + (data.mainProblem || "");
+  // برومبت صارم لضمان التفاصيل ومنع الرموز الغريبة
+  var prompt = "أنت مستشار أعمال خبير. قم بكتابة تقرير تحليلي مفصل جداً واحترافي باللغة العربية.\n" +
+    "بيانات المشروع:\n" +
+    "- اسم المشروع: " + (data.businessName || "") + "\n" +
+    "- التخصص: " + (CONFIG.BUSINESS_TYPES[data.businessType] || "") + "\n" +
+    "- الهدف: " + (CONFIG.GOALS[data.goal] || "") + "\n" +
+    "- التحديات: " + challengesText + "\n" +
+    "- المشكلة الأساسية: " + (data.mainProblem || "") + "\n\n" +
+    "تعليمات هامة جداً:\n" +
+    "1. لا تستخدم النجوم (*) أو المربعات (#) أو أي رموز تنسيق Markdown نهائياً.\n" +
+    "2. اكتب النص بشكل مباشر واحترافي.\n" +
+    "3. يجب أن يكون [ملخص] فصلاً طويلاً وشاملاً (على الأقل 4 أسطر).\n" +
+    "4. في أقسام [نقاط القوة] و [نقاط الضعف] و [فرص النمو] و [الخدمات الموصى بها] و [أول 3 خطوات]، يجب كتابة 3 نقاط على الأقل في كل قسم، وكل نقطة يجب أن تكون جملة مفصلة.\n\n" +
+    "التزم بالعناوين التالية حرفياً:\n" +
+    "[ملخص]\n" +
+    "[نقاط القوة]\n" +
+    "[نقاط الضعف]\n" +
+    "[فرص النمو]\n" +
+    "[الخدمات الموصى بها]\n" +
+    "[أول 3 خطوات]\n" +
+    "[التوصية النهائية]";
 
   var targetUrl = "https://router.bynara.id/v1/chat/completions";
   var apiUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
+
+  console.log("%c[API Debug] Executing Detailed Analysis...", "color: #3498db; font-weight: bold;");
 
   try {
     const response = await fetch(apiUrl, {
@@ -907,18 +925,25 @@ async function analyzeBusiness(data) {
         "Authorization": "Bearer sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI"
       },
       body: JSON.stringify({
-        model: "mistral-medium-3-5", // موديل سريع جداً ومجاني في حسابك
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_tokens: 1500
+        model: "mistral-medium-3-5",
+        messages: [
+          { role: "system", content: "أنت مستشار أعمال عربي، تكتب تقارير طويلة، مفصلة، وبدون استخدام أي رموز تنسيق مثل النجوم." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.8,
+        max_tokens: 2500 // زيادة الحد الأقصى للسماح بالتفاصيل
       })
     });
 
     if (!response.ok) throw new Error("HTTP " + response.status);
 
     const result = await response.json();
-    const aiText = result.choices[0].message.content;
-    
+    let aiText = result.choices[0].message.content || "";
+
+    // تنظيف النص برمجياً من أي نجوم قد يضعها الموديل بالخطأ
+    aiText = aiText.replace(/\*/g, '').replace(/#/g, '');
+
+    console.log("[API Debug] Success! Detailed analysis received.");
     return parseAIResponse(aiText, data);
 
   } catch (err) {
@@ -927,6 +952,7 @@ async function analyzeBusiness(data) {
     return generateDefaultAnalysis(data);
   }
 }
+
 
 
 
