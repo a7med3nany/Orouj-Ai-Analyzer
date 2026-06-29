@@ -890,66 +890,60 @@ async function analyzeBusiness(data) {
     challengesText = data.challenges.map(function(c) { return CONFIG.CHALLENGES[c] || c; }).join("، ");
   }
 
-  var prompt = "أنت مستشار استراتيجي خبير. قم بتحليل هذا المشروع بدقة متناهية وأعطني تقريراً احترافياً مفصلاً باللغة العربية:\n\n" +
-    "بيانات المشروع:\n" +
-    "- الاسم الشخصي: " + (data.fullName || "") + "\n" +
-    "- اسم المشروع: " + (data.businessName || "") + "\n" +
-    "- التخصص: " + (CONFIG.BUSINESS_TYPES[data.businessType] || data.businessType || "") + "\n" +
-    "- المرحلة الحالية: " + (CONFIG.BUSINESS_AGES[data.businessAge] || data.businessAge || "") + "\n" +
-    "- الهدف المنشود: " + (CONFIG.GOALS[data.goal] || data.goal || "") + "\n" +
-    "- الميزانية المتاحة: " + (CONFIG.BUDGETS[data.budget] || data.budget || "") + "\n" +
-    "- التحديات القائمة: " + challengesText + "\n" +
-    "- التواجد الرقمي: " + (data.hasSocial === "yes" ? "موجود — " + (data.socialLink || "") : "غير موجود") + "\n" +
-    "- العائق الأكبر: " + (data.mainProblem || "") + "\n\n" +
-    "المطلوب تحليل عميق وشامل مقسم كالتالي (استخدم العناوين بدقة):\n\n" +
-    "[ملخص]\nتحليل تنفيذي شامل للوضع الراهن للمشروع وفرصه في السوق.\n\n" +
-    "[نقاط القوة]\nحلل على الأقل 3 نقاط قوة يمكن الارتكاز عليها.\n\n" +
-    "[نقاط الضعف]\nحدد الثغرات الحالية التي تعيق النمو.\n\n" +
-    "[فرص النمو]\nاقترح فرصاً تسويقية وتقنية بناءً على الميزانية المذكورة.\n\n" +
-    "[الخدمات الموصى بها]\nحدد الخدمات التي يحتاجها المشروع فوراً.\n\n" +
-    "[أول 3 خطوات]\nخطة عمل تطبيقية تبدأ من اليوم.\n\n" +
-    "[التوصية النهائية]\nنصيحة استراتيجية ختامية لمستقبل المشروع.\n\n" +
-    "أجب باللغة العربية الفصحى وبأسلوب مهني جداً.";
+  var prompt = "حلل هذا المشروع باختصار واحترافية (ملخص، نقاط قوة، نقاط ضعف، فرص، خدمات، 3 خطوات، توصية):\n" +
+    "المشروع: " + (data.businessName || "") + "\n" +
+    "التخصص: " + (CONFIG.BUSINESS_TYPES[data.businessType] || "") + "\n" +
+    "الهدف: " + (CONFIG.GOALS[data.goal] || "") + "\n" +
+    "المشكلة: " + (data.mainProblem || "");
 
+  // استخدام بروكسي AllOrigins وهو يعيد البيانات كـ JSON مباشرة ويتحمل وقتاً أطول
   var targetUrl = "https://router.bynara.id/v1/chat/completions";
-  var apiUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
+  var apiUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(targetUrl);
 
-  console.log("%c[API Debug] Deep Analysis Started. Waiting for server response...", "color: #f39c12; font-weight: bold;");
+  console.log("%c[API Debug] Sending via AllOrigins Proxy...", "color: #3498db;");
 
   try {
     const response = await fetch(apiUrl, {
+      method: "POST", // ملاحظة: AllOrigins قد يتطلب تغيير طريقة الإرسال حسب إعداداته
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI"
+        },
+        body: JSON.stringify({
+          model: "mimo-v2.5-free",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.7,
+          max_tokens: 1000 // تقليل التوكنز لسرعة الرد وتجنب الـ Timeout
+        })
+      })
+    });
+
+    const dataRaw = await response.json();
+    const responseData = JSON.parse(dataRaw.contents); // AllOrigins يضع الرد داخل contents
+    
+    if (responseData.error) throw new Error(responseData.error.message);
+
+    var aiText = responseData.choices[0].message.content;
+    return parseAIResponse(aiText, data);
+
+  } catch (err) {
+    // إذا فشل كل شيء، سنضطر لاستخدام الموديل الأسرع gpt-3.5-turbo كحل أخير لضمان عمل الأداة أمام المستخدمين
+    console.warn("Switching to faster model due to timeout...");
+    return fetch("https://corsproxy.io/?https://router.bynara.id/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI"
       },
       body: JSON.stringify({
-        model: "mimo-v2.5-free",
-        messages: [
-          { role: "system", content: "أنت خبير استشارات أعمال وتسويق رقمي، ردودك مفصلة ودقيقة." },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.8,
-        max_tokens: 2500
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 800
       })
-    });
-
-    const responseData = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(responseData.error ? responseData.error.message : "HTTP " + response.status);
-    }
-
-    var aiText = responseData.choices[0].message.content || "";
-    console.log("[API Debug] Success! Response length:", aiText.length);
-    
-    return parseAIResponse(aiText, data);
-
-  } catch (err) {
-    console.error("[API Debug] Error:", err);
-    alert("حدث خطأ أثناء جلب البيانات: " + err.message);
-    // إرجاع null لضمان عدم عرض التحليل الثابت
-    return null; 
+    }).then(r => r.json()).then(res => parseAIResponse(res.choices[0].message.content, data));
   }
 }
 
