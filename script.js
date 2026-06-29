@@ -940,7 +940,7 @@ async function analyzeBusiness(data) {
 
   try {
     const response = await fetch("https://router.bynara.id/v1/chat/completions", {
-      method: "POST",
+      method: "POST", alert("Status: " + response.status);
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI",
@@ -964,7 +964,7 @@ async function analyzeBusiness(data) {
 
     console.log(response.status);
 
-    const result = await response.json();
+    const result = await response.json(); alert(JSON.stringify(result));
     console.log(result);
 
     if (!response.ok) {
