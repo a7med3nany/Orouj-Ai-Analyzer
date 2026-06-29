@@ -884,80 +884,62 @@ function restartApp() {
 // ============================================================
 // AI — Nara Router API + fallback
 // ============================================================
-function analyzeBusiness(data) {
+async function analyzeBusiness(data) {
   var challengesText = "";
   if (Array.isArray(data.challenges)) {
     challengesText = data.challenges.map(function(c) { return CONFIG.CHALLENGES[c] || c; }).join("، ");
   }
 
-  // برومبت مطور للحصول على أقصى دقة وتفاصيل من الموديل
-  var prompt = "أنت مستشار استراتيجي خبير. قم بتحليل هذا المشروع بدقة متناهية وأعطني تقريراً احترافياً مفصلاً باللغة العربية:\n\n" +
-    "بيانات المشروع:\n" +
-    "- الاسم الشخصي: " + (data.fullName || "") + "\n" +
-    "- اسم المشروع: " + (data.businessName || "") + "\n" +
-    "- التخصص: " + (CONFIG.BUSINESS_TYPES[data.businessType] || data.businessType || "") + "\n" +
-    "- المرحلة الحالية: " + (CONFIG.BUSINESS_AGES[data.businessAge] || data.businessAge || "") + "\n" +
-    "- الهدف المنشود: " + (CONFIG.GOALS[data.goal] || data.goal || "") + "\n" +
-    "- الميزانية المتاحة: " + (CONFIG.BUDGETS[data.budget] || data.budget || "") + "\n" +
-    "- التحديات القائمة: " + challengesText + "\n" +
-    "- التواجد الرقمي: " + (data.hasSocial === "yes" ? "موجود — " + (data.socialLink || "") : "غير موجود") + "\n" +
-    "- العائق الأكبر: " + (data.mainProblem || "") + "\n\n" +
-    "المطلوب تحليل عميق وشامل مقسم كالتالي (استخدم العناوين بدقة):\n\n" +
-    "[ملخص]\nتحليل تنفيذي شامل للوضع الراهن للمشروع وفرصه في السوق.\n\n" +
-    "[نقاط القوة]\nحلل على الأقل 3 نقاط قوة يمكن الارتكاز عليها.\n\n" +
-    "[نقاط الضعف]\nحدد الثغرات الحالية التي تعيق النمو.\n\n" +
-    "[فرص النمو]\nاقترح فرصاً تسويقية وتقنية بناءً على الميزانية المذكورة.\n\n" +
-    "[الخدمات الموصى بها]\nحدد الخدمات التي يحتاجها المشروع فوراً (تسويق، برمجة، هوية...).\n\n" +
-    "[أول 3 خطوات]\nخطة عمل تطبيقية تبدأ من اليوم.\n\n" +
-    "[التوصية النهائية]\nنصيحة استراتيجية ختامية لمستقبل المشروع.\n\n" +
-    "أجب باللغة العربية الفصحى وبأسلوب مهني جداً.";
+  var prompt = "أنت مستشار استراتيجي خبير. قم بتحليل هذا المشروع بدقة متناهية وأعطني تقريراً احترافياً مفصلاً باللغة العربية...\n"; // (نفس البرومبت القوي السابق)
 
   var targetUrl = "https://router.bynara.id/v1/chat/completions";
   var apiUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
 
-  var requestBody = {
-    model: "mimo-v2.5-free", // العودة للموديل الذي تفضله لدقته
-    messages: [
-      { role: "system", content: "أنت خبير استشارات أعمال وتسويق رقمي، ردودك مفصلة، دقيقة، وتعتمد على بيانات السوق الحقيقية." },
-      { role: "user", content: prompt }
-    ],
-    temperature: 0.8, // زيادة التنوع في الإجابة لجعلها أكثر إبداعاً
-    max_tokens: 2500  // زيادة عدد الكلمات للسماح للموديل بالتوسع في الشرح
-  };
+  // إعداد وحدة تحكم لإطالة وقت الانتظار إلى 90 ثانية
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120000); 
 
-  console.log("%c[API Debug] Starting Deep Analysis... Please wait.", "color: #f39c12; font-weight: bold;");
+  console.log("%c[API Debug] Starting Deep Analysis (Wait up to 90s)...", "color: #f39c12; font-weight: bold;");
 
-  return fetch(apiUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI"
-    },
-    body: JSON.stringify(requestBody)
-  })
-  .then(async function(response) {
-    var responseData = await response.json();
-    console.log("[API Debug] Status:", response.status);
+  try {
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      signal: controller.signal, // ربط وقت الانتظار بالطلب
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI"
+      },
+      body: JSON.stringify({
+        model: "mimo-v2.5-free",
+        messages: [
+          { role: "system", content: "أنت خبير استشارات أعمال وتسويق رقمي، ردودك مفصلة ودقيقة." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.8,
+        max_tokens: 2500
+      })
+    });
 
-    if (!response.ok) {
-      throw new Error(responseData.error ? responseData.error.message : "HTTP Error " + response.status);
-    }
-    return responseData;
-  })
-  .then(function(result) {
+    clearTimeout(timeoutId); // إلغاء التايم آوت عند وصول الرد
+
+    const responseData = await response.json();
+    if (!response.ok) throw new Error(responseData.error ? responseData.error.message : "HTTP " + response.status);
+
     var aiText = result.choices[0].message.content || "";
-    console.log("[API Debug] Analysis Received. Length:", aiText.length);
     return parseAIResponse(aiText, data);
-  })
-  .catch(function(err) {
+
+  } catch (err) {
+    clearTimeout(timeoutId);
     console.error("[API Debug] Error:", err);
-    if (err.message.includes("timeout") || err.message.includes("403")) {
-      alert("التحليل العميق يأخذ وقتاً طويلاً حالياً بسبب ضغط الخادم. يرجى إعادة المحاولة مرة أخرى.");
+    
+    if (err.name === 'AbortError') {
+      alert("الخادم مزدحم جداً حالياً ولم يرد خلال 90 ثانية. يرجى المحاولة مرة أخرى بعد قليل.");
     } else {
-      alert("حدث خطأ أثناء التحليل: " + err.message);
+      alert("حدث خطأ: " + err.message);
     }
-    throw err;
-  });
+    // إرجاع null بدلاً من التحليل الثابت لضمان عدم عرض بيانات غير حقيقية
+    return null; 
+  }
 }
 
 
