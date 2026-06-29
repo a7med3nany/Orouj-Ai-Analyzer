@@ -885,33 +885,57 @@ function restartApp() {
 }
 
 // ============================================================
-// AI  — API call + fallback
+// AI  — Nara Router API + fallback
 // ============================================================
 
 async function analyzeBusiness(data) {
   const prompt = `
-قم بتحليل المشروع التالي:
+قم بتحليل المشروع التالي وأعطني تقريراً احترافياً باللغة العربية:
 
 الاسم: ${data.fullName || ""}
 اسم المشروع: ${data.businessName || ""}
 نوع المشروع: ${CONFIG.BUSINESS_TYPES[data.businessType] || data.businessType || ""}
 عمر المشروع: ${CONFIG.BUSINESS_AGES[data.businessAge] || data.businessAge || ""}
 الهدف الرئيسي: ${CONFIG.GOALS[data.goal] || data.goal || ""}
-الميزانية: ${CONFIG.BUDGETS[data.budget] || data.budget || ""}
-التحديات: ${(Array.isArray(data.challenges) ? data.challenges : []).map((c) => CONFIG.CHALLENGES[c] || c).join(", ")}
-التواجد على السوشيال: ${data.hasSocial === "yes" ? "نعم — " + (data.socialLink || "") : "لا"}
+الميزانية الشهرية: ${CONFIG.BUDGETS[data.budget] || data.budget || ""}
+التحديات: ${(Array.isArray(data.challenges) ? data.challenges : []).map((c) => CONFIG.CHALLENGES[c] || c).join("، ")}
+التواجد على السوشيال: ${data.hasSocial === "yes" ? "نعم — " + (data.socialLink || "بدون رابط") : "لا"}
 المشكلة الأكثر إلحاحاً: ${data.mainProblem || ""}
 
-اعطني تحليلاً احترافياً باللغة العربية يشمل:
-1- ملخص تنفيذي (فقرة واحدة)
-2- 3 نقاط قوة
-3- 3 نقاط ضعف
-4- 3 فرص نمو
-5- 3 خدمات موصى بها
-6- أول 3 خطوات عملية
-7- توصية نهائية من عروج
+أريد ردك منظماً بالضبط على الشكل التالي (استخدم هذه العناوين حرفياً):
 
-أجب باللغة العربية فقط ولا تستخدم ترقيماً أو رموز markdown.
+[ملخص]
+اكتب هنا ملخصاً تنفيذياً في فقرة واحدة.
+
+[نقاط القوة]
+- نقطة 1
+- نقطة 2
+- نقطة 3
+
+[نقاط الضعف]
+- نقطة 1
+- نقطة 2
+- نقطة 3
+
+[فرص النمو]
+- فرصة 1
+- فرصة 2
+- فرصة 3
+
+[الخدمات الموصى بها]
+- خدمة 1
+- خدمة 2
+- خدمة 3
+
+[أول 3 خطوات]
+- خطوة 1
+- خطوة 2
+- خطوة 3
+
+[التوصية النهائية]
+اكتب هنا توصيتك النهائية في فقرة واحدة.
+
+أجب باللغة العربية فقط ولا تضف أي نص خارج هذا الهيكل.
 `;
 
   try {
@@ -919,50 +943,89 @@ async function analyzeBusiness(data) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer sk-nry-kIotj6pztHVIwuyvsd1ulEJcU_jRcoZre6X-MRPAi8U",
+        "Authorization": "Bearer sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI",
       },
       body: JSON.stringify({
-        model: "openai/gpt-4o-mini",
+        model: "mimo-v2.5-free",
         messages: [
-          { role: "system", content: "أنت مستشار أعمال وتسويق رقمي متخصص في السوق المصري والعربي. ردودك احترافية ومفيدة." },
-          { role: "user",   content: prompt },
+          {
+            role: "system",
+            content: "أنت مستشار أعمال وتسويق محترف متخصص في السوق المصري والعربي.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
         ],
         temperature: 0.7,
-        max_tokens: 1800,
+        max_tokens: 2000,
       }),
     });
 
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    console.log(response.status);
+
     const result = await response.json();
+    console.log(result);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
+    }
+
     const aiText = result?.choices?.[0]?.message?.content || "";
 
-    if (!aiText) throw new Error("Empty API response");
+    if (!aiText.trim()) {
+      throw new Error("API returned empty content");
+    }
 
-    // Parse AI free text into structured sections
     return parseAIResponse(aiText, data);
 
   } catch (err) {
-    console.warn("API failed, using default analysis:", err.message);
+    console.error("analyzeBusiness — API Error:", err);
     return generateDefaultAnalysis(data);
   }
 }
 
 function parseAIResponse(text, data) {
-  // Split by numbered sections; fall back gracefully
-  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  function extractSection(tag) {
+    const regex = new RegExp(`\\[${tag}\\]\\s*([\\s\\S]*?)(?=\\[|$)`);
+    const match = text.match(regex);
+    if (!match) return null;
+    return match[1].trim();
+  }
 
-  const score = Math.floor(Math.random() * 3) + 7; // 7–9
+  function extractList(tag) {
+    const block = extractSection(tag);
+    if (!block) return [];
+    return block
+      .split("\n")
+      .map((line) => line.replace(/^[-•*]\s*/, "").trim())
+      .filter((line) => line.length > 0);
+  }
+
+  const summary    = extractSection("ملخص")              || text.substring(0, 300);
+  const strengths  = extractList("نقاط القوة");
+  const weaknesses = extractList("نقاط الضعف");
+  const opps       = extractList("فرص النمو");
+  const services   = extractList("الخدمات الموصى بها");
+  const steps      = extractList("أول 3 خطوات");
+  const recommend  = extractSection("التوصية النهائية") || "";
+
+  // Score based on richness of AI response
+  const score = Math.min(
+    7 + Math.floor((strengths.length + opps.length) / 3),
+    10
+  );
 
   return {
     score,
     sections: {
-      summary: lines.slice(0, 3).join(" ") || text.substring(0, 300),
-      strengths: lines.slice(3, 6),
-      weaknesses: lines.slice(6, 9),
-      opportunities: lines.slice(9, 12),
-      services: lines.slice(12, 15),
-      nextSteps: lines.slice(15, 18),
-      recommendation: lines.slice(18).join(" ") || lines[lines.length - 1] || text.slice(-200),
+      summary,
+      strengths:     strengths.length  ? strengths  : ["مشروعك يمتلك إمكانات جيدة للنمو"],
+      weaknesses:    weaknesses.length ? weaknesses : ["يحتاج إلى تطوير الاستراتيجية التسويقية"],
+      opportunities: opps.length       ? opps       : ["فرص نمو متاحة في السوق المحلي"],
+      services:      services.length   ? services   : ["استراتيجية تسويق متكاملة"],
+      nextSteps:     steps.length      ? steps      : ["التواصل مع فريق عروج للبدء"],
+      recommendation: recommend || "عروج جاهزة لمساعدتك في تطوير مشروعك وتحقيق أهدافك.",
     },
   };
 }
@@ -1131,4 +1194,3 @@ if (document.readyState === "loading") {
 } else {
   init();
 }
-
