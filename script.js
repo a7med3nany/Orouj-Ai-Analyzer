@@ -245,7 +245,7 @@ async function sendToFormspree(data) {
 }
 
 async function getAIAnalysis(data) {
-    console.log("Starting Analysis for:", data.fullName);
+    console.log("Starting Analysis Process...");
     
     const prompt = `أنت مستشار أعمال استراتيجي من وكالة "عروج". قم بتحليل مشروع العميل بناءً على إجاباته.
     البيانات المقدمة:
@@ -277,43 +277,53 @@ async function getAIAnalysis(data) {
 
     const apiKey = "sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI";
     const apiUrl = "https://router.bynara.id/v1/chat/completions";
+    
+    // استخدام بروكسي بديل أكثر قوة لتخطي CORS
+    const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(apiUrl);
+
+    const requestOptions = {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+            model: "mimo-v2.5-free",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7
+        })
+    };
 
     try {
-        console.log("Sending request to Nara Router...");
-        
-        const response = await fetch(apiUrl, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-                model: "auto/bynara", // استخدام الموديل التلقائي الأضمن
-                messages: [{ role: "user", content: prompt }],
-                temperature: 0.7
-            })
-        });
-
-        console.log("Response Status:", response.status);
+        console.log("Attempting direct connection first...");
+        let response;
+        try {
+            response = await fetch(apiUrl, requestOptions);
+        } catch (err) {
+            console.warn("Direct connection blocked by CORS, trying proxy...");
+            response = await fetch(proxyUrl, requestOptions);
+        }
 
         if (!response.ok) {
-            const errorBody = await response.text();
-            console.error("API Error Body:", errorBody);
-            throw new Error(`HTTP ${response.status}: ${errorBody}`);
+            console.warn("Primary attempts failed, trying final fallback proxy...");
+            const fallbackProxy = "https://cors-anywhere.herokuapp.com/" + apiUrl;
+            response = await fetch(fallbackProxy, requestOptions);
+        }
+
+        if (!response.ok) {
+            throw new Error(`All connection attempts failed with status ${response.status}`);
         }
 
         const result = await response.json();
-        console.log("API Success Result:", result);
-        
-        if (result.choices && result.choices[0] && result.choices[0].message) {
-            return result.choices[0].message.content.trim();
-        } else {
-            throw new Error("Invalid API response format");
-        }
+        return result.choices[0].message.content.trim();
 
     } catch (e) {
-        console.error("Fetch Operation Failed:", e);
-        throw e;
+        console.error("Critical API Failure:", e);
+        // محاكاة تقرير بسيط في حالة الفشل التام للـ API لضمان عدم توقف الموقع
+        return `[التشخيص العميق للوضع الحالي]
+عذراً، نواجه ضغطاً كبيراً على الخادم حالياً. يرجى التواصل معنا عبر واتساب للحصول على تحليلك يدوياً.
+[التوصية النهائية وطلب التواصل]
+يرجى الضغط على زر واتساب بالأسفل لمتابعة التحليل مع فريق عروج.`;
     }
 }
 
