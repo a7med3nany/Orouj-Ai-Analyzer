@@ -1,7 +1,7 @@
 /**
  * ============================================================
- * عروج AI - الإصدار النهائي المعتمد 7.0
- * حل نهائي وشامل لمشكلة الـ API باستخدام Google Apps Script
+ * عروج AI - الإصدار النهائي المعتمد 8.0
+ * الاعتماد الكامل والحصري على الـ API عبر Google Apps Script
  * ============================================================
  */
 
@@ -152,21 +152,22 @@ async function submitForm() {
             body: JSON.stringify(data)
         }).catch(e => console.warn(e));
         
-        // محاولة التحليل عبر جسر جوجل
+        // جلب التحليل حصرياً من الـ API
         const analysis = await getAIAnalysis(data);
         clearInterval(loadInterval);
         showResults(analysis);
     } catch (err) {
         clearInterval(loadInterval);
-        console.error("API Error, using internal engine...");
-        const fallbackAnalysis = generateLocalAnalysis(data);
-        showResults(fallbackAnalysis);
+        console.error("Critical API Error:", err);
+        alert("عذراً، حدث خطأ أثناء الاتصال بالذكاء الاصطناعي. يرجى المحاولة مرة أخرى لاحقاً.");
+        document.getElementById("loadingScreen").style.display = "none";
+        document.getElementById("formSection").style.display = "block";
     }
 }
 
 async function getAIAnalysis(data) {
-    const prompt = `أنت مستشار أعمال استراتيجي من وكالة "عروج". قم بتحليل مشروع العميل بناءً على إجاباته الـ 25.
-    البيانات المقدمة: ${JSON.stringify(data)}
+    const prompt = `أنت مستشار أعمال استراتيجي من وكالة "عروج". قم بتحليل مشروع العميل بناءً على إجاباته الـ 25 التالية:
+    ${JSON.stringify(data)}
     
     المطلوب: اكتب تقريراً مكثفاً واحترافياً جداً باللغة العربية.
     التزم بالعناوين التالية (بدون نجوم أو رموز):
@@ -195,36 +196,15 @@ async function getAIAnalysis(data) {
             throw new Error(result.error);
         }
         
-        return result.choices[0].message.content.trim();
+        if (result.choices && result.choices[0] && result.choices[0].message) {
+            return result.choices[0].message.content.trim();
+        } else {
+            throw new Error("Invalid API Response Format");
+        }
     } catch (e) {
         console.error("Fetch Failed through Google Proxy:", e);
         throw e;
     }
-}
-
-function generateLocalAnalysis(data) {
-    return `[التشخيص العميق للوضع الحالي]
-بناءً على بيانات مشروع ${data.businessName}، نرى أنك في مرحلة ${data.businessAge === 'new' ? 'التأسيس' : 'النمو'} وتحتاج لضبط الهوية التجارية بشكل أعمق. المشكلة الأساسية في ${data.salesProblem} تتطلب حلاً جذرياً في طريقة عرض القيمة.
-
-[تحليل الجمهور والمنافسة]
-جمهورك في ${data.location} يبحث عن ${data.brandReputation}. المنافسين مثل ${data.competitors} يركزون على السعر، بينما يجب أن تركز أنت على ${data.uniqueSellingPoint} لتتميز.
-
-[خارطة الطريق التسويقية]
-يجب تكثيف التواجد على ${data.bestPlatform} مع تجربة إعلانات ممولة تستهدف ${data.targetAudience} بدقة. ميزانية ${data.marketingBudget} كافية للبدء إذا تم استغلالها في صناعة محتوى بصري قوي.
-
-[نقاط القوة والضعف بالمشرط]
-نقطة قوتك الكبرى هي ${data.uniqueSellingPoint}، بينما العائق الأساسي هو ${data.growthBarrier}. نحتاج لتقوية ${data.socialPlatforms} بشكل احترافي.
-
-[خطة العمل أول 3 خطوات ذهبية]
-1. إعادة صياغة الرسالة التسويقية لتركز على حل مشكلة ${data.mainPainPoint}.
-2. إطلاق حملة "وعي" مركزة على منصة ${data.bestPlatform}.
-3. تحسين نظام البيع من ${data.salesSystem} إلى نظام أكثر أتمتة.
-
-[لماذا عروج هي المنقذ؟]
-في وكالة عروج، نحن متخصصون في تحويل المشروعات من مرحلة "المغص" إلى مرحلة "الانطلاق" من خلال استراتيجيات مبنية على الأرقام والإبداع.
-
-[التوصية النهائية وطلب التواصل]
-مشروعك واعد جداً يا ${data.fullName}. ننصحك بالبدء فوراً في تنفيذ هذه التوصيات. تواصل معنا الآن عبر واتساب للحصول على استشارة مجانية مفصلة!`;
 }
 
 function showResults(text) {
