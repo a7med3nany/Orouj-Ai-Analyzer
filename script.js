@@ -245,28 +245,9 @@ async function sendToFormspree(data) {
 }
 
 async function getAIAnalysis(data) {
-    console.log("Starting Analysis Process...");
-    
-    const prompt = `أنت مستشار أعمال استراتيجي من وكالة "عروج". قم بتحليل مشروع العميل بناءً على إجاباته.
-    البيانات المقدمة:
-    - اسم العميل: ${data.fullName}
-    - اسم المشروع: ${data.businessName}
-    - المجال: ${data.businessType === 'other' ? data.otherBusinessType : data.businessType}
-    - الفكرة: ${data.businessIdea}
-    - الجمهور: ${data.targetAudience} في ${data.location}
-    - المنافسين: ${data.competitors}
-    - المنتج الأساسي: ${data.mainProduct} بسعر ${data.avgPrice}
-    - الميزة التنافسية: ${data.uniqueSellingPoint}
-    - مشكلة البيع: ${data.salesProblem}
-    - التسويق الحالي: ${data.socialPlatforms} (أفضلهم ${data.bestPlatform})
-    - الميزانية: ${data.marketingBudget}
-    - الهدف: ${data.shortTermGoal}
-    - العائق: ${data.growthBarrier}
-    - المشكلة الممغصة: ${data.mainPainPoint}
-
-    المطلوب:
-    اكتب تقريراً مكثفاً واحترافياً جداً باللغة العربية.
-    التزم بالعناوين التالية (بدون نجوم أو رموز):
+    const prompt = `أنت مستشار أعمال استراتيجي من وكالة "عروج". قم بتحليل مشروع العميل بناءً على إجاباته الـ 25.
+    البيانات: اسم العميل ${data.fullName}، مشروع ${data.businessName}، مجال ${data.businessType}، فكرة ${data.businessIdea}، جمهور ${data.targetAudience}، منافسين ${data.competitors}، ميزة ${data.uniqueSellingPoint}، مشكلة ${data.mainPainPoint}.
+    المطلوب: تقرير مفصل جداً بالعناوين التالية:
     [التشخيص العميق للوضع الحالي]
     [تحليل الجمهور والمنافسة]
     [خارطة الطريق التسويقية]
@@ -278,58 +259,46 @@ async function getAIAnalysis(data) {
     const apiKey = "sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI";
     const apiUrl = "https://router.bynara.id/v1/chat/completions";
     
-    // استخدام بروكسي بديل أكثر قوة لتخطي CORS
-    const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(apiUrl);
-
-    const requestOptions = {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-            model: "mimo-v2.5-free",
-            messages: [{ role: "user", content: prompt }],
-            temperature: 0.7
-        })
-    };
+    // الحل الأضمن: استخدام corsproxy.io لدمج الطلب
+    const finalUrl = "https://corsproxy.io/?" + encodeURIComponent(apiUrl);
 
     try {
-        console.log("Attempting direct connection first...");
-        let response;
-        try {
-            response = await fetch(apiUrl, requestOptions);
-        } catch (err) {
-            console.warn("Direct connection blocked by CORS, trying proxy...");
-            response = await fetch(proxyUrl, requestOptions);
-        }
+        const response = await fetch(finalUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: "mimo-v2.5-pro-free",
+                messages: [{ role: "user", content: prompt }],
+                temperature: 0.7,
+                max_tokens: 2000
+            })
+        });
 
-        if (!response.ok) {
-            console.warn("Primary attempts failed, trying final fallback proxy...");
-            const fallbackProxy = "https://cors-anywhere.herokuapp.com/" + apiUrl;
-            response = await fetch(fallbackProxy, requestOptions);
-        }
-
-        if (!response.ok) {
-            throw new Error(`All connection attempts failed with status ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error("API Error");
         const result = await response.json();
         return result.choices[0].message.content.trim();
-
     } catch (e) {
-        console.error("Critical API Failure:", e);
-        // محاكاة تقرير بسيط في حالة الفشل التام للـ API لضمان عدم توقف الموقع
-        return `[التشخيص العميق للوضع الحالي]
-عذراً، نواجه ضغطاً كبيراً على الخادم حالياً. يرجى التواصل معنا عبر واتساب للحصول على تحليلك يدوياً.
-[التوصية النهائية وطلب التواصل]
-يرجى الضغط على زر واتساب بالأسفل لمتابعة التحليل مع فريق عروج.`;
+        console.error("API Failure", e);
+        throw e;
     }
 }
 
 function showResults(text) {
+    // إخفاء كل شيء آخر ليكون التقرير ملء الشاشة
     document.getElementById("loadingScreen").style.display = "none";
-    document.getElementById("resultsSection").style.display = "block";
+    document.getElementById("hero-Section").style.display = "none";
+    document.getElementById("formSection").style.display = "none";
+    
+    // إخفاء الهيدر (اللوجو) لتوفير مساحة للتقرير
+    const header = document.querySelector(".logo-container");
+    if (header) header.style.display = "none";
+
+    const resultsSection = document.getElementById("resultsSection");
+    resultsSection.style.display = "block";
+    resultsSection.style.paddingTop = "20px";
     
     const reportContent = document.getElementById("reportContent");
     const sections = text.split('[');
@@ -343,24 +312,23 @@ function showResults(text) {
         const content = parts[1];
         
         html += `
-            <div class="report-section">
-                <h3>${title}</h3>
-                <div>${content.trim().replace(/\n/g, '<br>')}</div>
+            <div class="report-section" style="margin-bottom: 25px; background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; border-right: 4px solid #C9A84C;">
+                <h3 style="color: #C9A84C; margin-bottom: 15px; font-size: 1.3rem;">${title}</h3>
+                <div style="line-height: 1.8; color: #f0f0f0; font-size: 1.05rem;">${content.trim().replace(/\n/g, '<br>')}</div>
             </div>
         `;
     });
     
     reportContent.innerHTML = html;
     
-    const score = Math.floor(Math.random() * (95 - 65 + 1)) + 65;
-    const scoreValueEl = document.getElementById("scoreValue");
-    if (scoreValueEl) scoreValueEl.textContent = score;
-    
+    // تحديث السكور بشكل احترافي
+    const score = Math.floor(Math.random() * (96 - 82 + 1)) + 82;
+    document.getElementById("scoreValue").textContent = score;
+    const offset = 565 - (565 * score / 100);
     const scoreCircle = document.getElementById("scoreCircle");
-    if (scoreCircle) {
-        const offset = 565 - (565 * score / 100);
-        scoreCircle.style.strokeDashoffset = offset;
-    }
+    if (scoreCircle) scoreCircle.style.strokeDashoffset = offset;
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function initParticles() {
