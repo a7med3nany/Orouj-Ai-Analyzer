@@ -1,7 +1,7 @@
 /**
  * ============================================================
- * عروج AI - الإصدار الاحترافي 2.5
- * نظام التحليل الاستراتيجي (25 سؤال)
+ * عروج AI - الإصدار الاحترافي 3.1
+ * نظام التحليل الاستراتيجي (25 سؤال) مع ميزة الحفظ التلقائي
  * ============================================================
  */
 
@@ -11,11 +11,90 @@ var STATE = {
     formData: {}
 };
 
-// 1. التنقل بين الخطوات
-function startAnalysis() {
+// مفتاح التخزين في localStorage
+const STORAGE_KEY = 'orouj_ai_analyzer_data';
+
+// 1. تهيئة التطبيق عند التحميل
+window.onload = function() {
+    loadSavedData();
+    initParticles();
+};
+
+// تحميل البيانات المحفوظة
+function loadSavedData() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            STATE.formData = parsed.data || {};
+            STATE.currentStep = parsed.currentStep || 1;
+            
+            // تعبئة الحقول بالبيانات المحفوظة
+            const form = document.getElementById("analysisForm");
+            for (const [key, value] of Object.entries(STATE.formData)) {
+                const input = form.elements[key];
+                if (input) {
+                    input.value = value;
+                    if (key === 'businessType' && value === 'other') {
+                        document.getElementById("otherBusinessTypeGroup").style.display = "block";
+                    }
+                }
+            }
+            
+            // إذا كان المستخدم قد بدأ بالفعل، نظهر شاشة النموذج
+            if (STATE.currentStep > 1) {
+                startAnalysis(true);
+            }
+        } catch (e) {
+            console.error("Error loading saved data", e);
+        }
+    }
+}
+
+// حفظ البيانات الحالية
+function saveData() {
+    const form = document.getElementById("analysisForm");
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        data: data,
+        currentStep: STATE.currentStep
+    }));
+}
+
+// 2. التنقل بين الخطوات
+function startAnalysis(isResuming = false) {
     document.getElementById("hero-Section").style.display = "none";
     document.getElementById("formSection").classList.add("active");
-    updateProgress();
+    
+    if (isResuming) {
+        goToStep(STATE.currentStep);
+    } else {
+        updateProgress();
+    }
+}
+
+function goToStep(stepNumber) {
+    const steps = document.querySelectorAll(".form-step");
+    steps.forEach(s => s.classList.remove("active"));
+    
+    if (steps[stepNumber - 1]) {
+        steps[stepNumber - 1].classList.add("active");
+        STATE.currentStep = stepNumber;
+        updateProgress();
+        updateNavButtons();
+    }
+}
+
+function updateNavButtons() {
+    document.getElementById("prevBtn").style.display = STATE.currentStep === 1 ? "none" : "block";
+    const nextBtnText = document.getElementById("nextBtnText");
+    if (STATE.currentStep === STATE.totalSteps) {
+        nextBtnText.textContent = "إرسال وتحليل البيانات";
+    } else {
+        nextBtnText.textContent = "التالي";
+    }
 }
 
 function changeStep(n) {
@@ -37,40 +116,32 @@ function changeStep(n) {
         if (!valid) return;
     }
 
-    // إخفاء الخطوة الحالية
-    currentStepEl.classList.remove("active");
-    
+    // حفظ البيانات عند كل انتقال
+    saveData();
+
     // تحديث الخطوة
-    STATE.currentStep += n;
+    const nextStep = STATE.currentStep + n;
 
-    // إظهار الخطوة الجديدة
-    steps[STATE.currentStep - 1].classList.add("active");
-
-    // تحديث الأزرار والتقدم
-    document.getElementById("prevBtn").style.display = STATE.currentStep === 1 ? "none" : "block";
-    
-    if (STATE.currentStep === STATE.totalSteps) {
-        document.getElementById("nextBtnText").textContent = "إرسال وتحليل البيانات";
-    } else {
-        document.getElementById("nextBtnText").textContent = "التالي";
-    }
-
-    // إذا وصلنا لنهاية الأسئلة
-    if (STATE.currentStep > STATE.totalSteps) {
+    if (nextStep > STATE.totalSteps) {
         submitForm();
-    } else {
-        updateProgress();
+    } else if (nextStep >= 1) {
+        goToStep(nextStep);
     }
 }
 
 function updateProgress() {
     const pct = Math.round((STATE.currentStep / STATE.totalSteps) * 100);
-    document.getElementById("progressBar").style.width = pct + "%";
-    document.querySelector(".progress-percentage").textContent = pct + "%";
-    document.querySelector(".current-step").textContent = STATE.currentStep;
+    const progressBar = document.getElementById("progressBar");
+    if (progressBar) progressBar.style.width = pct + "%";
+    
+    const pctEl = document.querySelector(".progress-percentage");
+    if (pctEl) pctEl.textContent = pct + "%";
+    
+    const currentStepEl = document.querySelector(".current-step");
+    if (currentStepEl) currentStepEl.textContent = STATE.currentStep;
 }
 
-// 2. معالجة حقل "أخرى"
+// 3. معالجة حقل "أخرى"
 function checkOtherField(select) {
     const otherGroup = document.getElementById("otherBusinessTypeGroup");
     if (select.value === "other") {
@@ -82,13 +153,14 @@ function checkOtherField(select) {
     }
 }
 
-// 3. إرسال وتحليل البيانات
+// 4. إرسال وتحليل البيانات
 async function submitForm() {
     const form = document.getElementById("analysisForm");
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
     
     STATE.formData = data;
+    saveData(); // حفظ نهائي قبل الإرسال
     
     // إظهار شاشة التحميل
     document.getElementById("formSection").style.display = "none";
@@ -99,6 +171,8 @@ async function submitForm() {
         if (analysis) {
             showResults(analysis);
             sendToDatabase(data);
+            // بعد النجاح، يمكننا مسح البيانات المحفوظة إذا أردت
+            // localStorage.removeItem(STORAGE_KEY);
         } else {
             throw new Error("No analysis returned");
         }
@@ -131,13 +205,13 @@ async function getAIAnalysis(data) {
     المطلوب:
     اكتب تقريراً مكثفاً، طويلاً، واحترافياً جداً باللغة العربية.
     التزم بالعناوين التالية (بدون نجوم أو رموز):
-    [التشخيص العميق للوضع الحالي] (اكتب 5 أسطر على الأقل)
-    [تحليل الجمهور والمنافسة] (اكتب 3 نقاط مفصلة)
-    [خارطة الطريق التسويقية] (اكتب 3 نقاط مفصلة)
-    [نقاط القوة والضعف بالمشرط] (اكتب 4 نقاط مفصلة)
-    [خطة العمل أول 3 خطوات ذهبية] (اكتب 3 خطوات مرقمة 1، 2، 3)
-    [لماذا عروج هي المنقذ؟] (اكتب فقرة إقناعية قوية توضح كيف تحل عروج مشكلة العميل الممغصة)
-    [التوصية النهائية وطلب التواصل] (دعوة للتواصل فوراً مع عروج)`;
+    [التشخيص العميق للوضع الحالي]
+    [تحليل الجمهور والمنافسة]
+    [خارطة الطريق التسويقية]
+    [نقاط القوة والضعف بالمشرط]
+    [خطة العمل أول 3 خطوات ذهبية]
+    [لماذا عروج هي المنقذ؟]
+    [التوصية النهائية وطلب التواصل]`;
 
     const targetUrl = "https://router.bynara.id/v1/chat/completions";
     const apiUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
@@ -162,7 +236,6 @@ async function getAIAnalysis(data) {
     }
 
     const result = await response.json();
-    // تحسين: بدلاً من مسح التنسيق تماماً، سنقوم بتنظيف بسيط لضمان العرض بشكل جيد
     return result.choices[0].message.content.trim();
 }
 
@@ -177,13 +250,14 @@ function showResults(text) {
     sections.forEach(section => {
         if (!section.trim()) return;
         const parts = section.split(']');
+        if (parts.length < 2) return;
         const title = parts[0];
         const content = parts[1];
         
         html += `
             <div class="report-section">
                 <h3>${title}</h3>
-                <div>${content.replace(/\n/g, '<br>')}</div>
+                <div>${content.trim().replace(/\n/g, '<br>')}</div>
             </div>
         `;
     });
@@ -192,21 +266,23 @@ function showResults(text) {
     
     // تحريك دائرة السكور (عشوائي للجاهزية)
     const score = Math.floor(Math.random() * (95 - 60 + 1)) + 60;
-    document.getElementById("scoreValue").textContent = score;
-    const offset = 565 - (565 * score / 100);
-    document.getElementById("scoreCircle").style.strokeDashoffset = offset;
+    const scoreValueEl = document.getElementById("scoreValue");
+    if (scoreValueEl) scoreValueEl.textContent = score;
+    
+    const scoreCircle = document.getElementById("scoreCircle");
+    if (scoreCircle) {
+        const offset = 565 - (565 * score / 100);
+        scoreCircle.style.strokeDashoffset = offset;
+    }
 }
 
-// 4. وظيفة إرسال البيانات (قاعدة البيانات)
 function sendToDatabase(data) {
     console.log("Sending data to database...", data);
-    // ملاحظة للمستخدم: لربط Google Sheets، ستحتاج لاستخدام Google Apps Script URL هنا
-    // fetch("https://formspree.io/f/xbdvkqaq", { method: "POST", body: JSON.stringify(data) });
 }
 
-// تهيئة الجسيمات في الخلفية
-window.onload = function() {
+function initParticles() {
     const container = document.getElementById("particles");
+    if (!container) return;
     for (let i = 0; i < 30; i++) {
         const p = document.createElement("div");
         p.className = "particle";
@@ -217,4 +293,4 @@ window.onload = function() {
         p.style.animationDelay = Math.random() * 5 + "s";
         container.appendChild(p);
     }
-};
+}
