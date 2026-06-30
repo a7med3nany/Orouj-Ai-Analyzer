@@ -96,12 +96,17 @@ async function submitForm() {
     
     try {
         const analysis = await getAIAnalysis(data);
-        showResults(analysis);
-        // هنا يمكن إضافة وظيفة إرسال البيانات لـ Google Sheets
-        sendToDatabase(data);
+        if (analysis) {
+            showResults(analysis);
+            sendToDatabase(data);
+        } else {
+            throw new Error("No analysis returned");
+        }
     } catch (err) {
-        alert("حدث خطأ أثناء التحليل، يرجى المحاولة مرة أخرى.");
-        location.reload();
+        console.error("Analysis Error:", err);
+        document.getElementById("loadingScreen").style.display = "none";
+        document.getElementById("formSection").style.display = "block";
+        alert("عذراً، حدث خطأ أثناء تحليل البيانات. يرجى التأكد من اتصال الإنترنت والمحاولة مرة أخرى.");
     }
 }
 
@@ -151,8 +156,14 @@ async function getAIAnalysis(data) {
         })
     });
 
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || "Failed to fetch AI analysis");
+    }
+
     const result = await response.json();
-    return result.choices[0].message.content.replace(/\*/g, '').replace(/#/g, '');
+    // تحسين: بدلاً من مسح التنسيق تماماً، سنقوم بتنظيف بسيط لضمان العرض بشكل جيد
+    return result.choices[0].message.content.trim();
 }
 
 function showResults(text) {
