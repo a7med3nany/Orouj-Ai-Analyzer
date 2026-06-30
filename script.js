@@ -1,7 +1,7 @@
 /**
  * ============================================================
- * عروج AI - الإصدار المصلح 3.2
- * إصلاح مشاكل الـ API، Formspree، وتحسين واجهة التحميل
+ * عروج AI - الإصدار الاحترافي 3.3
+ * تحسين الحفظ اللحظي، إصلاح تداخل الأسئلة، وإصلاح الـ API
  * ============================================================
  */
 
@@ -17,7 +17,24 @@ const FORMSPREE_URL = "https://formspree.io/f/xbdvkqaq";
 window.onload = function() {
     loadSavedData();
     initParticles();
+    setupInstantSave();
 };
+
+// 1. نظام الحفظ التلقائي المطور (لحظي)
+function setupInstantSave() {
+    const form = document.getElementById("analysisForm");
+    const inputs = form.querySelectorAll("input, select, textarea");
+    
+    inputs.forEach(input => {
+        // حفظ عند التغيير أو الكتابة
+        input.addEventListener('input', () => {
+            saveData();
+        });
+        input.addEventListener('change', () => {
+            saveData();
+        });
+    });
+}
 
 function loadSavedData() {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -31,7 +48,13 @@ function loadSavedData() {
             for (const [key, value] of Object.entries(STATE.formData)) {
                 const input = form.elements[key];
                 if (input) {
-                    input.value = value;
+                    if (input.type === 'checkbox' || input.type === 'radio') {
+                        input.checked = (input.value === value);
+                    } else {
+                        input.value = value;
+                    }
+                    
+                    // معالجة حقل "أخرى" عند التحميل
                     if (key === 'businessType' && value === 'other') {
                         const otherGroup = document.getElementById("otherBusinessTypeGroup");
                         if (otherGroup) otherGroup.style.display = "block";
@@ -39,6 +62,7 @@ function loadSavedData() {
                 }
             }
             
+            // إذا كان المستخدم في خطوة متقدمة، نظهر شاشة النموذج فوراً
             if (STATE.currentStep > 1) {
                 startAnalysis(true);
             }
@@ -59,26 +83,41 @@ function saveData() {
     }));
 }
 
+// 2. إدارة الخطوات والتنقل
 function startAnalysis(isResuming = false) {
-    document.getElementById("hero-Section").style.display = "none";
-    document.getElementById("formSection").classList.add("active");
+    const hero = document.getElementById("hero-Section");
+    const formSec = document.getElementById("formSection");
+    
+    if (hero) hero.style.display = "none";
+    if (formSec) formSec.classList.add("active");
     
     if (isResuming) {
         goToStep(STATE.currentStep);
     } else {
-        updateProgress();
+        STATE.currentStep = 1;
+        goToStep(1);
     }
 }
 
 function goToStep(stepNumber) {
     const steps = document.querySelectorAll(".form-step");
-    steps.forEach(s => s.classList.remove("active"));
     
-    if (steps[stepNumber - 1]) {
-        steps[stepNumber - 1].classList.add("active");
+    // إخفاء كل الخطوات أولاً لضمان عدم التداخل
+    steps.forEach(s => {
+        s.classList.remove("active");
+        s.style.display = "none";
+    });
+    
+    // إظهار الخطوة المطلوبة فقط
+    const targetStep = document.querySelector(`.form-step[data-step="${stepNumber}"]`);
+    if (targetStep) {
+        targetStep.classList.add("active");
+        targetStep.style.display = "block";
         STATE.currentStep = stepNumber;
         updateProgress();
         updateNavButtons();
+        saveData(); // حفظ رقم الخطوة الحالية
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }
 
@@ -94,13 +133,14 @@ function updateNavButtons() {
 
 function changeStep(n) {
     const steps = document.querySelectorAll(".form-step");
-    const currentStepEl = steps[STATE.currentStep - 1];
+    const currentStepEl = document.querySelector(`.form-step[data-step="${STATE.currentStep}"]`);
 
     if (n > 0) {
-        const inputs = currentStepEl.querySelectorAll("input, select, textarea");
+        // التحقق من الحقول المطلوبة في الخطوة الحالية
+        const inputs = currentStepEl.querySelectorAll("input[required], select[required], textarea[required]");
         let valid = true;
         inputs.forEach(input => {
-            if (input.hasAttribute("required") && !input.value.trim()) {
+            if (!input.value.trim()) {
                 input.style.borderColor = "red";
                 valid = false;
             } else {
@@ -110,7 +150,6 @@ function changeStep(n) {
         if (!valid) return;
     }
 
-    saveData();
     const nextStep = STATE.currentStep + n;
 
     if (nextStep > STATE.totalSteps) {
@@ -145,6 +184,7 @@ function checkOtherField(select) {
     }
 }
 
+// 3. الإرسال والتحليل (إصلاح الـ API)
 async function submitForm() {
     const form = document.getElementById("analysisForm");
     const formData = new FormData(form);
@@ -156,7 +196,7 @@ async function submitForm() {
     document.getElementById("formSection").style.display = "none";
     document.getElementById("loadingScreen").style.display = "flex";
     
-    // محاكاة تغيير خطوات التحميل لتحسين الشكل
+    // محاكاة خطوات التحميل
     let loadStep = 1;
     const loadInterval = setInterval(() => {
         loadStep++;
@@ -164,30 +204,31 @@ async function submitForm() {
         if (stepEl) {
             document.querySelectorAll('.loading-step').forEach(el => el.classList.remove('active'));
             stepEl.classList.add('active');
-        } else {
-            clearInterval(loadInterval);
         }
-    }, 3000);
+    }, 4000);
     
     try {
-        // إرسال البيانات لـ Formspree أولاً
+        // 1. إرسال لـ Formspree
         await sendToFormspree(data);
         
-        // ثم الحصول على تحليل الذكاء الاصطناعي
+        // 2. الحصول على تحليل AI
         const analysis = await getAIAnalysis(data);
         
         clearInterval(loadInterval);
         if (analysis) {
             showResults(analysis);
+            // اختياري: مسح البيانات بعد النجاح الكامل
+            // localStorage.removeItem(STORAGE_KEY);
         } else {
             throw new Error("No analysis returned");
         }
     } catch (err) {
         clearInterval(loadInterval);
-        console.error("Error:", err);
+        console.error("Critical Error:", err);
         document.getElementById("loadingScreen").style.display = "none";
         document.getElementById("formSection").style.display = "block";
-        alert("عذراً، حدث خطأ أثناء معالجة البيانات. يرجى التأكد من اتصال الإنترنت والمحاولة مرة أخرى.");
+        document.getElementById("formSection").classList.add("active");
+        alert("عذراً، حدث خطأ أثناء معالجة البيانات. يرجى التأكد من اتصال الإنترنت وصلاحية مفتاح الـ API.");
     }
 }
 
@@ -198,10 +239,8 @@ async function sendToFormspree(data) {
             headers: { "Accept": "application/json", "Content-Type": "application/json" },
             body: JSON.stringify(data)
         });
-        console.log("Data sent to Formspree successfully");
     } catch (e) {
-        console.error("Formspree Error:", e);
-        // لا نعطل العملية إذا فشل Formspree، نستمر للتحليل
+        console.warn("Formspree bypass:", e);
     }
 }
 
@@ -234,50 +273,53 @@ async function getAIAnalysis(data) {
     [لماذا عروج هي المنقذ؟]
     [التوصية النهائية وطلب التواصل]`;
 
-    // استخدام الـ API مباشرة بدون بروكسي إذا أمكن، أو استخدام بروكسي موثوق
+    // استخدام الـ API الخاص بـ Nara Router
     const apiUrl = "https://router.bynara.id/v1/chat/completions";
+    const apiKey = "sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI";
 
+    // محاولة الاتصال المباشر (Nara Router يدعم CORS غالباً)
     try {
         const response = await fetch(apiUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": "Bearer sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI"
+                "Authorization": `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                model: "mistral-medium-3-5",
+                model: "mistral-medium-3-5", // تأكد من أن هذا الموديل متاح في خطتك
                 messages: [{ role: "user", content: prompt }],
-                temperature: 0.8,
-                max_tokens: 3000
+                temperature: 0.7,
+                max_tokens: 2500
             })
         });
 
         if (!response.ok) {
-            // محاولة بديلة عبر البروكسي إذا فشل المباشر بسبب CORS
-            const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(apiUrl);
-            const proxyResponse = await fetch(proxyUrl, {
+            const errorText = await response.text();
+            console.error("API Error Response:", errorText);
+            
+            // محاولة بديلة بموديل مختلف إذا كان الأول غير متاح
+            const retryResponse = await fetch(apiUrl, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": "Bearer sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI"
+                    "Authorization": `Bearer ${apiKey}`
                 },
                 body: JSON.stringify({
-                    model: "mistral-medium-3-5",
+                    model: "mimo-v2.5-free", // موديل مجاني بديل
                     messages: [{ role: "user", content: prompt }],
-                    temperature: 0.8,
-                    max_tokens: 3000
+                    temperature: 0.7
                 })
             });
             
-            if (!proxyResponse.ok) throw new Error("API call failed");
-            const result = await proxyResponse.json();
-            return result.choices[0].message.content.trim();
+            if (!retryResponse.ok) throw new Error("Both API attempts failed");
+            const retryResult = await retryResponse.json();
+            return retryResult.choices[0].message.content.trim();
         }
 
         const result = await response.json();
         return result.choices[0].message.content.trim();
     } catch (e) {
-        console.error("AI API Error:", e);
+        console.error("Fetch Error:", e);
         throw e;
     }
 }
@@ -307,7 +349,7 @@ function showResults(text) {
     
     reportContent.innerHTML = html;
     
-    const score = Math.floor(Math.random() * (95 - 60 + 1)) + 60;
+    const score = Math.floor(Math.random() * (95 - 65 + 1)) + 65;
     const scoreValueEl = document.getElementById("scoreValue");
     if (scoreValueEl) scoreValueEl.textContent = score;
     
@@ -321,10 +363,10 @@ function showResults(text) {
 function initParticles() {
     const container = document.getElementById("particles");
     if (!container) return;
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 25; i++) {
         const p = document.createElement("div");
         p.className = "particle";
-        p.style.width = Math.random() * 5 + "px";
+        p.style.width = Math.random() * 4 + "px";
         p.style.height = p.style.width;
         p.style.left = Math.random() * 100 + "%";
         p.style.top = Math.random() * 100 + "%";
