@@ -1,7 +1,7 @@
 /**
  * ============================================================
- * عروج AI - الإصدار الاحترافي 3.1
- * نظام التحليل الاستراتيجي (25 سؤال) مع ميزة الحفظ التلقائي
+ * عروج AI - الإصدار المصلح 3.2
+ * إصلاح مشاكل الـ API، Formspree، وتحسين واجهة التحميل
  * ============================================================
  */
 
@@ -11,16 +11,14 @@ var STATE = {
     formData: {}
 };
 
-// مفتاح التخزين في localStorage
 const STORAGE_KEY = 'orouj_ai_analyzer_data';
+const FORMSPREE_URL = "https://formspree.io/f/xbdvkqaq";
 
-// 1. تهيئة التطبيق عند التحميل
 window.onload = function() {
     loadSavedData();
     initParticles();
 };
 
-// تحميل البيانات المحفوظة
 function loadSavedData() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -29,19 +27,18 @@ function loadSavedData() {
             STATE.formData = parsed.data || {};
             STATE.currentStep = parsed.currentStep || 1;
             
-            // تعبئة الحقول بالبيانات المحفوظة
             const form = document.getElementById("analysisForm");
             for (const [key, value] of Object.entries(STATE.formData)) {
                 const input = form.elements[key];
                 if (input) {
                     input.value = value;
                     if (key === 'businessType' && value === 'other') {
-                        document.getElementById("otherBusinessTypeGroup").style.display = "block";
+                        const otherGroup = document.getElementById("otherBusinessTypeGroup");
+                        if (otherGroup) otherGroup.style.display = "block";
                     }
                 }
             }
             
-            // إذا كان المستخدم قد بدأ بالفعل، نظهر شاشة النموذج
             if (STATE.currentStep > 1) {
                 startAnalysis(true);
             }
@@ -51,7 +48,6 @@ function loadSavedData() {
     }
 }
 
-// حفظ البيانات الحالية
 function saveData() {
     const form = document.getElementById("analysisForm");
     const formData = new FormData(form);
@@ -63,7 +59,6 @@ function saveData() {
     }));
 }
 
-// 2. التنقل بين الخطوات
 function startAnalysis(isResuming = false) {
     document.getElementById("hero-Section").style.display = "none";
     document.getElementById("formSection").classList.add("active");
@@ -88,12 +83,12 @@ function goToStep(stepNumber) {
 }
 
 function updateNavButtons() {
-    document.getElementById("prevBtn").style.display = STATE.currentStep === 1 ? "none" : "block";
+    const prevBtn = document.getElementById("prevBtn");
+    if (prevBtn) prevBtn.style.display = STATE.currentStep === 1 ? "none" : "block";
+    
     const nextBtnText = document.getElementById("nextBtnText");
-    if (STATE.currentStep === STATE.totalSteps) {
-        nextBtnText.textContent = "إرسال وتحليل البيانات";
-    } else {
-        nextBtnText.textContent = "التالي";
+    if (nextBtnText) {
+        nextBtnText.textContent = STATE.currentStep === STATE.totalSteps ? "إرسال وتحليل البيانات" : "التالي";
     }
 }
 
@@ -101,7 +96,6 @@ function changeStep(n) {
     const steps = document.querySelectorAll(".form-step");
     const currentStepEl = steps[STATE.currentStep - 1];
 
-    // التحقق من الإدخال قبل الانتقال للخطوة التالية
     if (n > 0) {
         const inputs = currentStepEl.querySelectorAll("input, select, textarea");
         let valid = true;
@@ -116,10 +110,7 @@ function changeStep(n) {
         if (!valid) return;
     }
 
-    // حفظ البيانات عند كل انتقال
     saveData();
-
-    // تحديث الخطوة
     const nextStep = STATE.currentStep + n;
 
     if (nextStep > STATE.totalSteps) {
@@ -141,46 +132,76 @@ function updateProgress() {
     if (currentStepEl) currentStepEl.textContent = STATE.currentStep;
 }
 
-// 3. معالجة حقل "أخرى"
 function checkOtherField(select) {
     const otherGroup = document.getElementById("otherBusinessTypeGroup");
-    if (select.value === "other") {
-        otherGroup.style.display = "block";
-        otherGroup.querySelector("input").setAttribute("required", "required");
-    } else {
-        otherGroup.style.display = "none";
-        otherGroup.querySelector("input").removeAttribute("required");
+    if (otherGroup) {
+        if (select.value === "other") {
+            otherGroup.style.display = "block";
+            otherGroup.querySelector("input").setAttribute("required", "required");
+        } else {
+            otherGroup.style.display = "none";
+            otherGroup.querySelector("input").removeAttribute("required");
+        }
     }
 }
 
-// 4. إرسال وتحليل البيانات
 async function submitForm() {
     const form = document.getElementById("analysisForm");
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
     
     STATE.formData = data;
-    saveData(); // حفظ نهائي قبل الإرسال
+    saveData();
     
-    // إظهار شاشة التحميل
     document.getElementById("formSection").style.display = "none";
     document.getElementById("loadingScreen").style.display = "flex";
     
+    // محاكاة تغيير خطوات التحميل لتحسين الشكل
+    let loadStep = 1;
+    const loadInterval = setInterval(() => {
+        loadStep++;
+        const stepEl = document.getElementById(`l-step-${loadStep}`);
+        if (stepEl) {
+            document.querySelectorAll('.loading-step').forEach(el => el.classList.remove('active'));
+            stepEl.classList.add('active');
+        } else {
+            clearInterval(loadInterval);
+        }
+    }, 3000);
+    
     try {
+        // إرسال البيانات لـ Formspree أولاً
+        await sendToFormspree(data);
+        
+        // ثم الحصول على تحليل الذكاء الاصطناعي
         const analysis = await getAIAnalysis(data);
+        
+        clearInterval(loadInterval);
         if (analysis) {
             showResults(analysis);
-            sendToDatabase(data);
-            // بعد النجاح، يمكننا مسح البيانات المحفوظة إذا أردت
-            // localStorage.removeItem(STORAGE_KEY);
         } else {
             throw new Error("No analysis returned");
         }
     } catch (err) {
-        console.error("Analysis Error:", err);
+        clearInterval(loadInterval);
+        console.error("Error:", err);
         document.getElementById("loadingScreen").style.display = "none";
         document.getElementById("formSection").style.display = "block";
-        alert("عذراً، حدث خطأ أثناء تحليل البيانات. يرجى التأكد من اتصال الإنترنت والمحاولة مرة أخرى.");
+        alert("عذراً، حدث خطأ أثناء معالجة البيانات. يرجى التأكد من اتصال الإنترنت والمحاولة مرة أخرى.");
+    }
+}
+
+async function sendToFormspree(data) {
+    try {
+        await fetch(FORMSPREE_URL, {
+            method: "POST",
+            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+        console.log("Data sent to Formspree successfully");
+    } catch (e) {
+        console.error("Formspree Error:", e);
+        // لا نعطل العملية إذا فشل Formspree، نستمر للتحليل
     }
 }
 
@@ -213,30 +234,52 @@ async function getAIAnalysis(data) {
     [لماذا عروج هي المنقذ؟]
     [التوصية النهائية وطلب التواصل]`;
 
-    const targetUrl = "https://router.bynara.id/v1/chat/completions";
-    const apiUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
+    // استخدام الـ API مباشرة بدون بروكسي إذا أمكن، أو استخدام بروكسي موثوق
+    const apiUrl = "https://router.bynara.id/v1/chat/completions";
 
-    const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI"
-        },
-        body: JSON.stringify({
-            model: "mistral-medium-3-5",
-            messages: [{ role: "user", content: prompt }],
-            temperature: 0.8,
-            max_tokens: 3000
-        })
-    });
+    try {
+        const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI"
+            },
+            body: JSON.stringify({
+                model: "mistral-medium-3-5",
+                messages: [{ role: "user", content: prompt }],
+                temperature: 0.8,
+                max_tokens: 3000
+            })
+        });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || "Failed to fetch AI analysis");
+        if (!response.ok) {
+            // محاولة بديلة عبر البروكسي إذا فشل المباشر بسبب CORS
+            const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(apiUrl);
+            const proxyResponse = await fetch(proxyUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI"
+                },
+                body: JSON.stringify({
+                    model: "mistral-medium-3-5",
+                    messages: [{ role: "user", content: prompt }],
+                    temperature: 0.8,
+                    max_tokens: 3000
+                })
+            });
+            
+            if (!proxyResponse.ok) throw new Error("API call failed");
+            const result = await proxyResponse.json();
+            return result.choices[0].message.content.trim();
+        }
+
+        const result = await response.json();
+        return result.choices[0].message.content.trim();
+    } catch (e) {
+        console.error("AI API Error:", e);
+        throw e;
     }
-
-    const result = await response.json();
-    return result.choices[0].message.content.trim();
 }
 
 function showResults(text) {
@@ -264,7 +307,6 @@ function showResults(text) {
     
     reportContent.innerHTML = html;
     
-    // تحريك دائرة السكور (عشوائي للجاهزية)
     const score = Math.floor(Math.random() * (95 - 60 + 1)) + 60;
     const scoreValueEl = document.getElementById("scoreValue");
     if (scoreValueEl) scoreValueEl.textContent = score;
@@ -274,10 +316,6 @@ function showResults(text) {
         const offset = 565 - (565 * score / 100);
         scoreCircle.style.strokeDashoffset = offset;
     }
-}
-
-function sendToDatabase(data) {
-    console.log("Sending data to database...", data);
 }
 
 function initParticles() {
