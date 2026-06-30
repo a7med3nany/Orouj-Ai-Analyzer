@@ -1,7 +1,7 @@
 /**
  * ============================================================
- * عروج AI - الإصدار النهائي المعتمد 6.0
- * حل نهائي وشامل لمشكلة الـ API وتجربة المستخدم
+ * عروج AI - الإصدار النهائي المعتمد 7.0
+ * حل نهائي وشامل لمشكلة الـ API باستخدام Google Apps Script
  * ============================================================
  */
 
@@ -13,6 +13,8 @@ var STATE = {
 
 const STORAGE_KEY = 'orouj_ai_analyzer_data';
 const FORMSPREE_URL = "https://formspree.io/f/xbdvkqaq";
+// الرابط النهائي لـ Google Apps Script الذي تم إنشاؤه في حسابك
+const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx1ICAaaFp4P8lB0deDnHxhbklnkTgnnbMu1k4NSfnSTJZWMKfh0gdEIYP-cot2Jy2V8Q/exec";
 
 window.onload = function() {
     loadSavedData();
@@ -143,14 +145,14 @@ async function submitForm() {
     }, 3000);
     
     try {
-        // إرسال البيانات فوراً
+        // إرسال البيانات فوراً لـ Formspree
         fetch(FORMSPREE_URL, {
             method: "POST",
             headers: { "Accept": "application/json", "Content-Type": "application/json" },
             body: JSON.stringify(data)
         }).catch(e => console.warn(e));
         
-        // محاولة التحليل بذكاء
+        // محاولة التحليل عبر جسر جوجل
         const analysis = await getAIAnalysis(data);
         clearInterval(loadInterval);
         showResults(analysis);
@@ -163,25 +165,41 @@ async function submitForm() {
 }
 
 async function getAIAnalysis(data) {
-    const apiKey = "sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI";
-    const apiUrl = "https://router.bynara.id/v1/chat/completions";
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+    const prompt = `أنت مستشار أعمال استراتيجي من وكالة "عروج". قم بتحليل مشروع العميل بناءً على إجاباته الـ 25.
+    البيانات المقدمة: ${JSON.stringify(data)}
+    
+    المطلوب: اكتب تقريراً مكثفاً واحترافياً جداً باللغة العربية.
+    التزم بالعناوين التالية (بدون نجوم أو رموز):
+    [التشخيص العميق للوضع الحالي]
+    [تحليل الجمهور والمنافسة]
+    [خارطة الطريق التسويقية]
+    [نقاط القوة والضعف بالمشرط]
+    [خطة العمل أول 3 خطوات ذهبية]
+    [لماذا عروج هي المنقذ؟]
+    [التوصية النهائية وطلب التواصل]`;
 
-    const prompt = `أنت مستشار أعمال استراتيجي من وكالة "عروج". قم بتحليل مشروع العميل بناءً على إجاباته الـ 25. البيانات: ${JSON.stringify(data)}. المطلوب: تقرير احترافي جداً بالعناوين: [التشخيص العميق للوضع الحالي] [تحليل الجمهور والمنافسة] [خارطة الطريق التسويقية] [نقاط القوة والضعف بالمشرط] [خطة العمل أول 3 خطوات ذهبية] [لماذا عروج هي المنقذ؟] [التوصية النهائية وطلب التواصل]`;
+    try {
+        const response = await fetch(googleScriptUrl, {
+            method: "POST",
+            body: JSON.stringify({
+                messages: [
+                    { role: "system", content: "أنت خبير استراتيجي في وكالة عروج للتسويق." },
+                    { role: "user", content: prompt }
+                ]
+            })
+        });
 
-    const response = await fetch(proxyUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + apiKey },
-        body: JSON.stringify({
-            model: "mimo-v2.5-free",
-            messages: [{ role: "user", content: prompt }],
-            temperature: 0.7
-        })
-    });
-
-    if (!response.ok) throw new Error("API Fail");
-    const result = await response.json();
-    return result.choices[0].message.content.trim();
+        const result = await response.json();
+        
+        if (result.error) {
+            throw new Error(result.error);
+        }
+        
+        return result.choices[0].message.content.trim();
+    } catch (e) {
+        console.error("Fetch Failed through Google Proxy:", e);
+        throw e;
+    }
 }
 
 function generateLocalAnalysis(data) {
@@ -252,4 +270,3 @@ function initParticles() {
         container.appendChild(p);
     }
 }
-
