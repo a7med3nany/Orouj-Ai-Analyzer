@@ -120,6 +120,14 @@ body {
 .form-section.active { display: block; }
 .form-container { max-width: 700px; margin: 0 auto; }
 
+.form-step {
+    display: none; /* إخفاء كافة الخطوات افتراضياً */
+}
+
+.form-step.active {
+    display: block !important; /* إظهار الخطوة النشطة فقط */
+}
+
 .progress-header {
     display: flex; align-items: center; gap: 15px; margin-bottom: 30px;
     background: rgba(255,255,255,0.05); padding: 15px; border-radius: var(--radius-md);
