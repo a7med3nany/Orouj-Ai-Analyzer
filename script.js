@@ -245,6 +245,8 @@ async function sendToFormspree(data) {
 }
 
 async function getAIAnalysis(data) {
+    console.log("Starting Analysis for:", data.fullName);
+    
     const prompt = `أنت مستشار أعمال استراتيجي من وكالة "عروج". قم بتحليل مشروع العميل بناءً على إجاباته.
     البيانات المقدمة:
     - اسم العميل: ${data.fullName}
@@ -274,73 +276,44 @@ async function getAIAnalysis(data) {
     [التوصية النهائية وطلب التواصل]`;
 
     const apiKey = "sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI";
-    const directUrl = "https://router.bynara.id/v1/chat/completions";
-    // استخدام بروكسي عام لحل مشكلة CORS في المتصفح
-    const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(directUrl);
-
-    const payload = {
-        model: "mimo-v2.5-free", // الموديل المجاني الأكثر استقراراً
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7
-    };
-
-    console.log("Attempting API call via Proxy...");
+    const apiUrl = "https://router.bynara.id/v1/chat/completions";
 
     try {
-        // المحاولة الأولى عبر البروكسي (لحل مشاكل CORS)
-        let response = await fetch(proxyUrl, {
+        console.log("Sending request to Nara Router...");
+        
+        const response = await fetch(apiUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${apiKey}`
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                model: "auto/bynara", // استخدام الموديل التلقائي الأضمن
+                messages: [{ role: "user", content: prompt }],
+                temperature: 0.7
+            })
         });
 
-        // إذا فشل البروكسي، نحاول الاتصال المباشر كحل أخير
-        if (!response.ok) {
-            console.warn("Proxy failed, trying direct connection...");
-            response = await fetch(directUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${apiKey}`
-                },
-                body: JSON.stringify(payload)
-            });
-        }
+        console.log("Response Status:", response.status);
 
         if (!response.ok) {
-            const errorData = await response.text();
-            console.error("API Error Detail:", errorData);
-            throw new Error(`API returned status ${response.status}`);
+            const errorBody = await response.text();
+            console.error("API Error Body:", errorBody);
+            throw new Error(`HTTP ${response.status}: ${errorBody}`);
         }
 
         const result = await response.json();
-        console.log("Analysis received successfully!");
-        return result.choices[0].message.content.trim();
+        console.log("API Success Result:", result);
+        
+        if (result.choices && result.choices[0] && result.choices[0].message) {
+            return result.choices[0].message.content.trim();
+        } else {
+            throw new Error("Invalid API response format");
+        }
 
     } catch (e) {
-        console.error("Critical API Error:", e);
-        // محاولة أخيرة بموديل أبسط إذا كان هناك خطأ في الموديل المختار
-        try {
-            console.log("Final fallback attempt...");
-            const finalResponse = await fetch(proxyUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: "bynara-mimo-v2.5",
-                    messages: [{ role: "user", content: prompt }]
-                })
-            });
-            const finalResult = await finalResponse.json();
-            return finalResult.choices[0].message.content.trim();
-        } catch (innerError) {
-            throw e; // نمرر الخطأ الأصلي إذا فشلت كل المحاولات
-        }
+        console.error("Fetch Operation Failed:", e);
+        throw e;
     }
 }
 
