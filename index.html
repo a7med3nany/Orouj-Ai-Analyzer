@@ -46,7 +46,7 @@
             </div>
 
             <form id="analysisForm" class="analysis-form">
-                <!-- Group 1: الأساسيات -->
+                <!-- Group 1: الأساسيات (5 أسئلة) -->
                 <div class="form-step active" data-step="1">
                     <div class="step-content">
                         <h2 class="step-title">نتعرف عليك الأول</h2>
@@ -61,7 +61,7 @@
                     <div class="step-content">
                         <h2 class="step-title">اسم المشروع</h2>
                         <div class="form-group">
-                            <label class="form-label">اسم مشروعك إيه؟ (أو الاسم اللي بتفكر فيه)</label>
+                            <label class="form-label">اسم مشروعك إيه؟</label>
                             <input type="text" name="businessName" class="form-input" placeholder="اسم البراند" required>
                         </div>
                     </div>
@@ -71,7 +71,7 @@
                     <div class="step-content">
                         <h2 class="step-title">مجال الشغل</h2>
                         <div class="form-group">
-                            <label class="form-label">مشروعك في مجال إيه بالظبط؟</label>
+                            <label class="form-label">مشروعك في مجال إيه؟</label>
                             <select name="businessType" class="form-select" onchange="checkOtherField(this)" required>
                                 <option value="">اختر المجال</option>
                                 <option value="restaurant">مطعم / كافيه</option>
@@ -85,7 +85,7 @@
                         </div>
                         <div class="form-group" id="otherBusinessTypeGroup" style="display:none;">
                             <label class="form-label">اكتب مجالك هنا</label>
-                            <input type="text" name="otherBusinessType" class="form-input" placeholder="مثلاً: صيدلية، مصنع بلاستيك...">
+                            <input type="text" name="otherBusinessType" class="form-input" placeholder="مثلاً: صيدلية، مصنع...">
                         </div>
                     </div>
                 </div>
@@ -96,6 +96,7 @@
                         <div class="form-group">
                             <label class="form-label">المشروع بقاله قد إيه شغال؟</label>
                             <select name="businessAge" class="form-select" required>
+                                <option value="">اختر المدة</option>
                                 <option value="new">لسه فكرة / جديد</option>
                                 <option value="less-year">أقل من سنة</option>
                                 <option value="1-3-years">من سنة لـ 3 سنين</option>
@@ -109,19 +110,19 @@
                     <div class="step-content">
                         <h2 class="step-title">فكرة المشروع</h2>
                         <div class="form-group">
-                            <label class="form-label">إيه فكرة مشروعك باختصار؟ (بتبيع إيه لمين؟)</label>
+                            <label class="form-label">إيه فكرة مشروعك باختصار؟</label>
                             <textarea name="businessIdea" class="form-textarea" placeholder="اشرح لنا في سطرين..." required></textarea>
                         </div>
                     </div>
                 </div>
 
-                <!-- Group 2: الهوية والجمهور -->
+                <!-- Group 2: الهوية والجمهور (5 أسئلة) -->
                 <div class="form-step" data-step="6">
                     <div class="step-content">
                         <h2 class="step-title">الزبون المثالي</h2>
                         <div class="form-group">
-                            <label class="form-label">مين هو "الزبون المثالي"؟ (سنهم، اهتماماتهم، رجالة ولا ستات؟)</label>
-                            <textarea name="targetAudience" class="form-textarea" required></textarea>
+                            <label class="form-label">مين هو "الزبون المثالي"؟</label>
+                            <textarea name="targetAudience" class="form-textarea" placeholder="السن، الاهتمامات، الجنس..." required></textarea>
                         </div>
                     </div>
                 </div>
@@ -130,8 +131,8 @@
                     <div class="step-content">
                         <h2 class="step-title">مكان الزبون</h2>
                         <div class="form-group">
-                            <label class="form-label">العميل بتاعك موجود فين؟ (محافظة معينة، مصر كلها، ولا بره؟)</label>
-                            <input type="text" name="location" class="form-input" required>
+                            <label class="form-label">العميل بتاعك موجود فين؟</label>
+                            <input type="text" name="location" class="form-input" placeholder="محافظة، مصر، أم بره..." required>
                         </div>
                     </div>
                 </div>
@@ -140,8 +141,8 @@
                     <div class="step-content">
                         <h2 class="step-title">سمعة البراند</h2>
                         <div class="form-group">
-                            <label class="form-label">إيه أكتر كلمة بتحب العملاء يقولوها عن مشروعك؟ (رخيص، شيك، جودة...)</label>
-                            <input type="text" name="brandReputation" class="form-input" required>
+                            <label class="form-label">إيه أكتر كلمة بتحب العملاء يقولوها عن مشروعك؟</label>
+                            <input type="text" name="brandReputation" class="form-input" placeholder="رخيص، شيك، جودة..." required>
                         </div>
                     </div>
                 </div>
@@ -150,8 +151,9 @@
                     <div class="step-content">
                         <h2 class="step-title">الهوية البصرية</h2>
                         <div class="form-group">
-                            <label class="form-label">عندك لوجو وألوان واضحة للمشروع؟</label>
+                            <label class="form-label">عندك لوجو وألوان واضحة؟</label>
                             <select name="hasIdentity" class="form-select" required>
+                                <option value="">اختر</option>
                                 <option value="yes">أيوه عندي</option>
                                 <option value="no">لأ لسه</option>
                                 <option value="needs-update">عندي بس محتاج تطوير</option>
@@ -164,18 +166,18 @@
                     <div class="step-content">
                         <h2 class="step-title">المنافسين</h2>
                         <div class="form-group">
-                            <label class="form-label">مين هما أكبر 3 منافسين ليك في السوق؟</label>
+                            <label class="form-label">مين أكبر 3 منافسين ليك؟</label>
                             <textarea name="competitors" class="form-textarea" required></textarea>
                         </div>
                     </div>
                 </div>
 
-                <!-- Group 3: المنتج والمبيعات -->
+                <!-- Group 3: المنتج والمبيعات (5 أسئلة) -->
                 <div class="form-step" data-step="11">
                     <div class="step-content">
                         <h2 class="step-title">البطل بتاعك</h2>
                         <div class="form-group">
-                            <label class="form-label">إيه أهم منتج أو خدمة بتقدمها وبتحقق أكتر مبيعات؟</label>
+                            <label class="form-label">إيه أهم منتج أو خدمة بتقدمها؟</label>
                             <input type="text" name="mainProduct" class="form-input" required>
                         </div>
                     </div>
@@ -185,7 +187,7 @@
                     <div class="step-content">
                         <h2 class="step-title">الميزة التنافسية</h2>
                         <div class="form-group">
-                            <label class="form-label">ليه الزبون يشتري منك وميروحش للمنافس؟ (إيه اللي بيميزك؟)</label>
+                            <label class="form-label">ليه الزبون يشتري منك وميروحش للمنافس؟</label>
                             <textarea name="uniqueSellingPoint" class="form-textarea" required></textarea>
                         </div>
                     </div>
@@ -195,8 +197,8 @@
                     <div class="step-content">
                         <h2 class="step-title">السعر</h2>
                         <div class="form-group">
-                            <label class="form-label">متوسط سعر المنتج أو الخدمة عندك كام تقريباً؟</label>
-                            <input type="text" name="avgPrice" class="form-input" required>
+                            <label class="form-label">متوسط سعر المنتج عندك كام؟</label>
+                            <input type="text" name="avgPrice" class="form-input" placeholder="مثلاً: 500 جنيه" required>
                         </div>
                     </div>
                 </div>
@@ -205,7 +207,7 @@
                     <div class="step-content">
                         <h2 class="step-title">عقدة البيع</h2>
                         <div class="form-group">
-                            <label class="form-label">إيه أكتر مشكلة بتواجهك في عملية البيع حالياً؟ (الزبون بيفاصل، مفيش رد...)</label>
+                            <label class="form-label">إيه أكتر مشكلة بتواجهك في البيع؟</label>
                             <textarea name="salesProblem" class="form-textarea" required></textarea>
                         </div>
                     </div>
@@ -215,24 +217,25 @@
                     <div class="step-content">
                         <h2 class="step-title">الإدارة</h2>
                         <div class="form-group">
-                            <label class="form-label">عندك موقع أو سيستم للمبيعات ولا شغال يدوي؟</label>
+                            <label class="form-label">عندك موقع أو سيستم للمبيعات؟</label>
                             <select name="salesSystem" class="form-select" required>
+                                <option value="">اختر</option>
                                 <option value="manual">يدوي (واتساب/تليفون)</option>
                                 <option value="website">موقع إلكتروني</option>
                                 <option value="excel">شيتات إكسيل</option>
-                                <option value="pos">سيستم كاشير/إدارة</option>
+                                <option value="pos">سيستم كاشير</option>
                             </select>
                         </div>
                     </div>
                 </div>
 
-                <!-- Group 4: التسويق -->
+                <!-- Group 4: التسويق (5 أسئلة) -->
                 <div class="form-step" data-step="16">
                     <div class="step-content">
-                        <h2 class="step-title">المنصات</h2>
+                        <h2 class="step-title">المنصات التسويقية</h2>
                         <div class="form-group">
-                            <label class="form-label">إيه المنصات اللي مشروعك موجود عليها؟</label>
-                            <input type="text" name="socialPlatforms" class="form-input" placeholder="فيسبوك، إنستا..." required>
+                            <label class="form-label">بتسوق فين حالياً؟ (فيسبوك، انستجرام، تيك توك...)</label>
+                            <textarea name="socialPlatforms" class="form-textarea" required></textarea>
                         </div>
                     </div>
                 </div>
@@ -241,7 +244,7 @@
                     <div class="step-content">
                         <h2 class="step-title">أفضل منصة</h2>
                         <div class="form-group">
-                            <label class="form-label">إيه أكتر منصة بتحس إنها بتجيب لك عملاء فعلاً؟</label>
+                            <label class="form-label">أفضل منصة بتجيبلك نتايج؟</label>
                             <input type="text" name="bestPlatform" class="form-input" required>
                         </div>
                     </div>
@@ -249,59 +252,56 @@
 
                 <div class="form-step" data-step="18">
                     <div class="step-content">
-                        <h2 class="step-title">المحتوى</h2>
+                        <h2 class="step-title">ميزانية التسويق</h2>
                         <div class="form-group">
-                            <label class="form-label">بتنزل محتوى (فيديوهات وصور) بشكل يومي ومنتظم؟</label>
-                            <select name="contentRegularity" class="form-select" required>
-                                <option value="daily">يومياً</option>
-                                <option value="weekly">أسبوعياً</option>
-                                <option value="rarely">قليل جداً</option>
-                                <option value="none">مفيش خالص</option>
-                            </select>
+                            <label class="form-label">كام الميزانية الشهرية للتسويق؟</label>
+                            <input type="text" name="marketingBudget" class="form-input" placeholder="مثلاً: 5000 جنيه" required>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-step" data-step="19">
                     <div class="step-content">
-                        <h2 class="step-title">الإعلانات</h2>
+                        <h2 class="step-title">الهدف القريب</h2>
                         <div class="form-group">
-                            <label class="form-label">جربت تعمل إعلانات ممولة؟ وإيه كانت النتيجة؟</label>
-                            <textarea name="adsExperience" class="form-textarea" required></textarea>
+                            <label class="form-label">إيه الهدف بتاعك في الـ 3 شهور الجاية؟</label>
+                            <textarea name="shortTermGoal" class="form-textarea" required></textarea>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-step" data-step="20">
                     <div class="step-content">
-                        <h2 class="step-title">الميزانية</h2>
+                        <h2 class="step-title">العائق الأساسي</h2>
                         <div class="form-group">
-                            <label class="form-label">الميزانية اللي تقدر تخصصها للتسويق شهرياً كام؟ (بأمانة)</label>
-                            <input type="text" name="marketingBudget" class="form-input" required>
+                            <label class="form-label">إيه أكبر عائق بيمنعك من النمو؟</label>
+                            <textarea name="growthBarrier" class="form-textarea" required></textarea>
                         </div>
                     </div>
                 </div>
 
-                <!-- Group 5: الطموح والتحديات -->
+                <!-- Group 5: المشاكل والطموحات (5 أسئلة) -->
                 <div class="form-step" data-step="21">
                     <div class="step-content">
-                        <h2 class="step-title">الهدف القريب</h2>
+                        <h2 class="step-title">المشكلة الممغصة</h2>
                         <div class="form-group">
-                            <label class="form-label">إيه هدفك الأساسي في الـ 6 شهور الجاية؟</label>
-                            <textarea name="shortTermGoal" class="form-textarea" required></textarea>
+                            <label class="form-label">إيه أكبر "مغص" بتعاني منه في مشروعك دلوقتي؟</label>
+                            <textarea name="mainPainPoint" class="form-textarea" required></textarea>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-step" data-step="22">
                     <div class="step-content">
-                        <h2 class="step-title">فريق العمل</h2>
+                        <h2 class="step-title">الموارد المتاحة</h2>
                         <div class="form-group">
-                            <label class="form-label">عندك فريق عمل ولا شايل الليلة لوحدك؟</label>
+                            <label class="form-label">عندك فريق كام؟ (أنت وحدك، 2-5 أشخاص، أكتر؟)</label>
                             <select name="teamSize" class="form-select" required>
-                                <option value="solo">لوحدي</option>
-                                <option value="small">فريق صغير (2-5)</option>
-                                <option value="big">فريق كبير (أكتر من 5)</option>
+                                <option value="">اختر</option>
+                                <option value="solo">أنا وحدي</option>
+                                <option value="2-5">2 إلى 5 أشخاص</option>
+                                <option value="6-10">6 إلى 10 أشخاص</option>
+                                <option value="10plus">أكتر من 10</option>
                             </select>
                         </div>
                     </div>
@@ -309,57 +309,62 @@
 
                 <div class="form-step" data-step="23">
                     <div class="step-content">
-                        <h2 class="step-title">العائق</h2>
+                        <h2 class="step-title">الطموح الكبير</h2>
                         <div class="form-group">
-                            <label class="form-label">إيه أكبر عائق حاسس إنه مانع مشروعك يكبر بسرعة؟</label>
-                            <textarea name="growthBarrier" class="form-textarea" required></textarea>
+                            <label class="form-label">إيه الحلم بتاعك للمشروع؟ (بعد سنة، سنتين...)</label>
+                            <textarea name="longTermVision" class="form-textarea" required></textarea>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-step" data-step="24">
                     <div class="step-content">
-                        <h2 class="step-title">العصاية السحرية</h2>
+                        <h2 class="step-title">التحديات الحالية</h2>
                         <div class="form-group">
-                            <label class="form-label">لو معاك "عصاية سحرية" تحب تغير إيه في مشروعك دلوقتي؟</label>
-                            <textarea name="magicWish" class="form-textarea" required></textarea>
+                            <label class="form-label">إيه أكبر 3 تحديات بتواجهك؟</label>
+                            <textarea name="challenges" class="form-textarea" required></textarea>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-step" data-step="25">
                     <div class="step-content">
-                        <h2 class="step-title">المغص الحقيقي</h2>
+                        <h2 class="step-title">معلومات التواصل</h2>
                         <div class="form-group">
-                            <label class="form-label">إيه هي "المشكلة اللي ممغصة عليك عيشتك" ومحتاج لها حل جذري؟</label>
-                            <textarea name="mainPainPoint" class="form-textarea" required></textarea>
+                            <label class="form-label">إيميلك أو رقم واتساب (اختياري)</label>
+                            <input type="text" name="contact" class="form-input" placeholder="بريدك الإلكتروني أو رقمك">
                         </div>
                     </div>
                 </div>
-
-                <!-- Navigation Buttons -->
-                <div class="form-navigation">
-                    <button type="button" class="nav-btn prev" id="prevBtn" onclick="changeStep(-1)" style="display:none;">
-                        <span>السابق</span>
-                    </button>
-                    <button type="button" class="nav-btn next" id="nextBtn" onclick="changeStep(1)">
-                        <span id="nextBtnText">التالي</span>
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="transform: rotate(180deg);">
-                            <path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </button>
-                </div>
             </form>
+
+            <div class="form-navigation">
+                <button type="button" class="nav-btn prev" id="prevBtn" onclick="changeStep(-1)" style="display:none;">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M8 4L14 10L8 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <span>السابق</span>
+                </button>
+                <button type="button" class="nav-btn next" id="nextBtn" onclick="changeStep(1)">
+                    <span id="nextBtnText">التالي</span>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="transform: rotate(180deg);">
+                        <path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
         </div>
     </section>
 
     <!-- Loading Screen -->
-    <div id="loadingScreen" class="loading-screen">
+    <div class="loading-screen" id="loadingScreen">
         <div class="loading-content">
             <div class="loading-spinner"></div>
-            <h2 id="loadingMessage">جارٍ تحليل الـ 25 إجابة...</h2>
-            <div class="loading-bar-container">
-                <div class="loading-progress-bar"></div>
+            <h2 class="loading-title">جاري تحليل الـ 25 إجابة...</h2>
+            <p class="loading-subtitle">مستشار عروج الذكي بيجهزلك خارطة طريق مشروعك</p>
+            <div class="loading-steps">
+                <div class="loading-step active" id="l-step-1">فحص البيانات المدخلة...</div>
+                <div class="loading-step" id="l-step-2">تحليل المنافسين والجمهور...</div>
+                <div class="loading-step" id="l-step-3">صياغة الاستراتيجية التسويقية...</div>
             </div>
         </div>
     </div>
@@ -369,23 +374,30 @@
         <div class="results-container">
             <div class="results-header">
                 <div class="score-container">
-                    <svg class="score-svg" viewBox="0 0 200 200">
-                        <circle class="score-bg" cx="100" cy="100" r="90"></circle>
-                        <circle class="score-fill" id="scoreCircle" cx="100" cy="100" r="90"></circle>
+                    <svg class="score-svg">
+                        <circle class="score-bg" cx="75" cy="75" r="70"></circle>
+                        <circle class="score-fill" id="scoreCircle" cx="75" cy="75" r="70"></circle>
                     </svg>
                     <div class="score-text">
                         <span class="score-value" id="scoreValue">0</span>
                         <span class="score-label">درجة الجاهزية</span>
                     </div>
                 </div>
-                <h2 class="results-title">تقرير التحليل الاستراتيجي</h2>
+                <h2 class="results-title">تقرير مشروعك الاستراتيجي</h2>
+                <p>بناءً على تحليل عروج AI المتطور</p>
             </div>
+
             <div id="reportContent" class="report-content">
-                <!-- AI Content will be injected here -->
+                <!-- التقرير سيظهر هنا -->
             </div>
+
             <div class="results-footer">
-                <button class="cta-button" onclick="location.reload()">تحليل جديد</button>
-                <a href="https://wa.me/YOUR_NUMBER" class="whatsapp-btn">تواصل مع عروج لحل "المغص"</a>
+                <a href="https://wa.me/201016604644" class="whatsapp-btn" target="_blank">
+                    <span>تواصل مع عروج للتنفيذ</span>
+                </a>
+                <button class="cta-button" onclick="location.reload()" style="background: rgba(255,255,255,0.1); color: white; box-shadow: none;">
+                    <span>إعادة التحليل</span>
+                </button>
             </div>
         </div>
     </section>
@@ -393,4 +405,3 @@
     <script src="script.js"></script>
 </body>
 </html>
-
