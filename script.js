@@ -245,7 +245,7 @@ async function sendToFormspree(data) {
 }
 
 async function getAIAnalysis(data) {
-    const prompt = `أنت مستشار أعمال استراتيجي من وكالة "عروج". قم بتحليل مشروع العميل بناءً على 25 إجابة مفصلة.
+    const prompt = `أنت مستشار أعمال استراتيجي من وكالة "عروج". قم بتحليل مشروع العميل بناءً على إجاباته.
     البيانات المقدمة:
     - اسم العميل: ${data.fullName}
     - اسم المشروع: ${data.businessName}
@@ -263,7 +263,7 @@ async function getAIAnalysis(data) {
     - المشكلة الممغصة: ${data.mainPainPoint}
 
     المطلوب:
-    اكتب تقريراً مكثفاً، طويلاً، واحترافياً جداً باللغة العربية.
+    اكتب تقريراً مكثفاً واحترافياً جداً باللغة العربية.
     التزم بالعناوين التالية (بدون نجوم أو رموز):
     [التشخيص العميق للوضع الحالي]
     [تحليل الجمهور والمنافسة]
@@ -273,54 +273,74 @@ async function getAIAnalysis(data) {
     [لماذا عروج هي المنقذ؟]
     [التوصية النهائية وطلب التواصل]`;
 
-    // استخدام الـ API الخاص بـ Nara Router
-    const apiUrl = "https://router.bynara.id/v1/chat/completions";
     const apiKey = "sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI";
+    const directUrl = "https://router.bynara.id/v1/chat/completions";
+    // استخدام بروكسي عام لحل مشكلة CORS في المتصفح
+    const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(directUrl);
 
-    // محاولة الاتصال المباشر (Nara Router يدعم CORS غالباً)
+    const payload = {
+        model: "mimo-v2.5-free", // الموديل المجاني الأكثر استقراراً
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7
+    };
+
+    console.log("Attempting API call via Proxy...");
+
     try {
-        const response = await fetch(apiUrl, {
+        // المحاولة الأولى عبر البروكسي (لحل مشاكل CORS)
+        let response = await fetch(proxyUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${apiKey}`
             },
-            body: JSON.stringify({
-                model: "mistral-medium-3-5", // تأكد من أن هذا الموديل متاح في خطتك
-                messages: [{ role: "user", content: prompt }],
-                temperature: 0.7,
-                max_tokens: 2500
-            })
+            body: JSON.stringify(payload)
         });
 
+        // إذا فشل البروكسي، نحاول الاتصال المباشر كحل أخير
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error("API Error Response:", errorText);
-            
-            // محاولة بديلة بموديل مختلف إذا كان الأول غير متاح
-            const retryResponse = await fetch(apiUrl, {
+            console.warn("Proxy failed, trying direct connection...");
+            response = await fetch(directUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${apiKey}`
+                },
+                body: JSON.stringify(payload)
+            });
+        }
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            console.error("API Error Detail:", errorData);
+            throw new Error(`API returned status ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log("Analysis received successfully!");
+        return result.choices[0].message.content.trim();
+
+    } catch (e) {
+        console.error("Critical API Error:", e);
+        // محاولة أخيرة بموديل أبسط إذا كان هناك خطأ في الموديل المختار
+        try {
+            console.log("Final fallback attempt...");
+            const finalResponse = await fetch(proxyUrl, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${apiKey}`
                 },
                 body: JSON.stringify({
-                    model: "mimo-v2.5-free", // موديل مجاني بديل
-                    messages: [{ role: "user", content: prompt }],
-                    temperature: 0.7
+                    model: "bynara-mimo-v2.5",
+                    messages: [{ role: "user", content: prompt }]
                 })
             });
-            
-            if (!retryResponse.ok) throw new Error("Both API attempts failed");
-            const retryResult = await retryResponse.json();
-            return retryResult.choices[0].message.content.trim();
+            const finalResult = await finalResponse.json();
+            return finalResult.choices[0].message.content.trim();
+        } catch (innerError) {
+            throw e; // نمرر الخطأ الأصلي إذا فشلت كل المحاولات
         }
-
-        const result = await response.json();
-        return result.choices[0].message.content.trim();
-    } catch (e) {
-        console.error("Fetch Error:", e);
-        throw e;
     }
 }
 
