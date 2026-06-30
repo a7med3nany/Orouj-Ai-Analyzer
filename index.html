@@ -46,7 +46,7 @@
             </div>
 
             <form id="analysisForm" class="analysis-form">
-                <!-- Group 1: الأساسيات (5 أسئلة) -->
+                <!-- Group 1: الأساسيات -->
                 <div class="form-step active" data-step="1">
                     <div class="step-content">
                         <h2 class="step-title">نتعرف عليك الأول</h2>
@@ -116,7 +116,7 @@
                     </div>
                 </div>
 
-                <!-- Group 2: الهوية والجمهور (5 أسئلة) -->
+                <!-- Group 2: الهوية والجمهور -->
                 <div class="form-step" data-step="6">
                     <div class="step-content">
                         <h2 class="step-title">الزبون المثالي</h2>
@@ -172,7 +172,7 @@
                     </div>
                 </div>
 
-                <!-- Group 3: المنتج والمبيعات (5 أسئلة) -->
+                <!-- Group 3: المنتج والمبيعات -->
                 <div class="form-step" data-step="11">
                     <div class="step-content">
                         <h2 class="step-title">البطل بتاعك</h2>
@@ -229,7 +229,7 @@
                     </div>
                 </div>
 
-                <!-- Group 4: التسويق (5 أسئلة) -->
+                <!-- Group 4: التسويق -->
                 <div class="form-step" data-step="16">
                     <div class="step-content">
                         <h2 class="step-title">المنصات التسويقية</h2>
@@ -280,7 +280,7 @@
                     </div>
                 </div>
 
-                <!-- Group 5: المشاكل والطموحات (5 أسئلة) -->
+                <!-- Group 5: المشاكل والطموحات -->
                 <div class="form-step" data-step="21">
                     <div class="step-content">
                         <h2 class="step-title">المشكلة الممغصة</h2>
@@ -295,7 +295,7 @@
                     <div class="step-content">
                         <h2 class="step-title">الموارد المتاحة</h2>
                         <div class="form-group">
-                            <label class="form-label">عندك فريق كام؟ (أنت وحدك، 2-5 أشخاص، أكتر؟)</label>
+                            <label class="form-label">عندك فريق كام؟</label>
                             <select name="teamSize" class="form-select" required>
                                 <option value="">اختر</option>
                                 <option value="solo">أنا وحدي</option>
@@ -311,7 +311,7 @@
                     <div class="step-content">
                         <h2 class="step-title">الطموح الكبير</h2>
                         <div class="form-group">
-                            <label class="form-label">إيه الحلم بتاعك للمشروع؟ (بعد سنة، سنتين...)</label>
+                            <label class="form-label">إيه الحلم بتاعك للمشروع؟</label>
                             <textarea name="longTermVision" class="form-textarea" required></textarea>
                         </div>
                     </div>
@@ -340,16 +340,10 @@
 
             <div class="form-navigation">
                 <button type="button" class="nav-btn prev" id="prevBtn" onclick="changeStep(-1)" style="display:none;">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path d="M8 4L14 10L8 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
                     <span>السابق</span>
                 </button>
                 <button type="button" class="nav-btn next" id="nextBtn" onclick="changeStep(1)">
                     <span id="nextBtnText">التالي</span>
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="transform: rotate(180deg);">
-                        <path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
                 </button>
             </div>
         </div>
@@ -395,7 +389,7 @@
                 <a href="https://wa.me/201016604644" class="whatsapp-btn" target="_blank">
                     <span>تواصل مع عروج للتنفيذ</span>
                 </a>
-                <button class="cta-button" onclick="location.reload()" style="background: rgba(255,255,255,0.1); color: white; box-shadow: none;">
+                <button class="cta-button" onclick="location.reload()" style="background: rgba(255,255,255,0.1); color: white; box-shadow: none; margin-top: 15px; width: 100%;">
                     <span>إعادة التحليل</span>
                 </button>
             </div>
