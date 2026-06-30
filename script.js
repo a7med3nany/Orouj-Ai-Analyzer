@@ -246,8 +246,25 @@ async function sendToFormspree(data) {
 
 async function getAIAnalysis(data) {
     const prompt = `أنت مستشار أعمال استراتيجي من وكالة "عروج". قم بتحليل مشروع العميل بناءً على إجاباته الـ 25.
-    البيانات: اسم العميل ${data.fullName}، مشروع ${data.businessName}، مجال ${data.businessType}، فكرة ${data.businessIdea}، جمهور ${data.targetAudience}، منافسين ${data.competitors}، ميزة ${data.uniqueSellingPoint}، مشكلة ${data.mainPainPoint}.
-    المطلوب: تقرير مفصل جداً بالعناوين التالية:
+    البيانات المقدمة:
+    - اسم العميل: ${data.fullName}
+    - اسم المشروع: ${data.businessName}
+    - المجال: ${data.businessType === 'other' ? data.otherBusinessType : data.businessType}
+    - الفكرة: ${data.businessIdea}
+    - الجمهور: ${data.targetAudience} في ${data.location}
+    - المنافسين: ${data.competitors}
+    - المنتج الأساسي: ${data.mainProduct} بسعر ${data.avgPrice}
+    - الميزة التنافسية: ${data.uniqueSellingPoint}
+    - مشكلة البيع: ${data.salesProblem}
+    - التسويق الحالي: ${data.socialPlatforms} (أفضلهم ${data.bestPlatform})
+    - الميزانية: ${data.marketingBudget}
+    - الهدف: ${data.shortTermGoal}
+    - العائق: ${data.growthBarrier}
+    - المشكلة الممغصة: ${data.mainPainPoint}
+
+    المطلوب:
+    اكتب تقريراً مكثفاً واحترافياً جداً باللغة العربية.
+    التزم بالعناوين التالية (بدون نجوم أو رموز):
     [التشخيص العميق للوضع الحالي]
     [تحليل الجمهور والمنافسة]
     [خارطة الطريق التسويقية]
@@ -258,30 +275,32 @@ async function getAIAnalysis(data) {
 
     const apiKey = "sk-nry-V9H1WAFFgp8UautBZnQmlSQ8DInPevXCquhtPObGUZI";
     const apiUrl = "https://router.bynara.id/v1/chat/completions";
-    
-    // الحل الأضمن: استخدام corsproxy.io لدمج الطلب
-    const finalUrl = "https://corsproxy.io/?" + encodeURIComponent(apiUrl);
 
+    // العودة للاتصال المباشر كما كان يعمل سابقاً
     try {
-        const response = await fetch(finalUrl, {
+        const response = await fetch(apiUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                model: "mimo-v2.5-pro-free",
+                model: "mimo-v2.5-free", // الموديل اللي كان شغال
                 messages: [{ role: "user", content: prompt }],
                 temperature: 0.7,
-                max_tokens: 2000
+                max_tokens: 2500
             })
         });
 
-        if (!response.ok) throw new Error("API Error");
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`API Error: ${response.status} - ${errorText}`);
+        }
+
         const result = await response.json();
         return result.choices[0].message.content.trim();
     } catch (e) {
-        console.error("API Failure", e);
+        console.error("API Fetch Failed:", e);
         throw e;
     }
 }
